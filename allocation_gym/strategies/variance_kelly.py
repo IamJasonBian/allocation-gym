@@ -1,6 +1,8 @@
 """
 Variance Kelly Strategy — Multi-asset Kelly rebalancing.
 Ported from trading_engine.py VarianceKellyStrategy.
+
+Supports per-asset minimum weight constraints enforced at month-end.
 """
 
 import backtrader as bt
@@ -13,10 +15,14 @@ class VarianceKellyStrategy(bt.Strategy):
     """
     Computes diagonal-covariance Kelly weights across multiple assets.
     Rebalances when any position drifts beyond rebalance_threshold.
+
+    min_weights: {symbol: float} — floor constraints enforced every rebalance.
+        At month-end, positions are forced to meet the floor regardless of drift.
     """
 
     params = (
         ("expected_returns", {}),
+        ("min_weights", {}),             # e.g. {"BTC-USD": 0.50}
         ("rebalance_threshold", 0.05),
         ("kelly_fraction", 0.25),
         ("risk_free_rate", 0.045),
@@ -29,19 +35,40 @@ class VarianceKellyStrategy(bt.Strategy):
     def __init__(self):
         self.variance_indicators = {}
         self.bar_count = 0
+        self._prev_month = None
 
         for data in self.datas:
             name = data._name
+            td = 365 if "BTC" in name.upper() else self.p.trading_days
             self.variance_indicators[name] = VarianceIndicator(
                 data,
                 period=self.p.variance_lookback,
                 vr_k=self.p.vr_k,
-                trading_days=self.p.trading_days,
+                trading_days=td,
             )
+
+    def _is_month_end(self):
+        """True on the last trading day of a month (next bar is a new month)."""
+        dt = self.data.datetime.date(0)
+        cur_month = (dt.year, dt.month)
+        if self._prev_month is not None and cur_month != self._prev_month:
+            # We just crossed into a new month — previous bar was month-end
+            return False
+        # Check if next bar exists and is a different month
+        try:
+            next_dt = self.data.datetime.date(1)
+            is_end = (next_dt.year, next_dt.month) != cur_month
+        except IndexError:
+            is_end = True  # last bar in dataset
+        self._prev_month = cur_month
+        return is_end
 
     def next(self):
         self.bar_count += 1
-        if self.bar_count % self.p.rebalance_days != 0:
+        month_end = self._is_month_end()
+
+        # Regular rebalance cadence, or force on month-end
+        if not month_end and self.bar_count % self.p.rebalance_days != 0:
             return
 
         active = []
@@ -74,11 +101,37 @@ class VarianceKellyStrategy(bt.Strategy):
         full_kelly = inv_cov @ excess_arr
         frac_kelly = full_kelly * self.p.kelly_fraction
         frac_kelly = np.maximum(frac_kelly, 0)
+
+        # Apply minimum weight constraints
+        active_names = [d._name for d in active]
+        for name, min_w in self.p.min_weights.items():
+            if name in active_names:
+                idx = active_names.index(name)
+                frac_kelly[idx] = max(frac_kelly[idx], min_w)
+
+        # Normalize if sum > 1
         total = frac_kelly.sum()
         if total > 1.0:
-            frac_kelly /= total
+            # Scale non-floor assets down while preserving floors
+            floor_indices = set()
+            for name, min_w in self.p.min_weights.items():
+                if name in active_names:
+                    idx = active_names.index(name)
+                    if frac_kelly[idx] <= min_w + 1e-9:
+                        floor_indices.add(idx)
+
+            floor_total = sum(frac_kelly[i] for i in floor_indices)
+            non_floor_total = sum(frac_kelly[i] for i in range(len(frac_kelly)) if i not in floor_indices)
+            remaining = 1.0 - floor_total
+
+            if non_floor_total > 0 and remaining > 0:
+                for i in range(len(frac_kelly)):
+                    if i not in floor_indices:
+                        frac_kelly[i] = frac_kelly[i] / non_floor_total * remaining
 
         equity = self.broker.getvalue()
+        # Use tighter threshold at month-end to enforce floors
+        threshold = 0.01 if month_end else self.p.rebalance_threshold
 
         for i, data in enumerate(active):
             target_pct = frac_kelly[i]
@@ -88,7 +141,7 @@ class VarianceKellyStrategy(bt.Strategy):
             current_value = pos.size * data.close[0]
 
             drift = abs(target_value - current_value) / equity if equity > 0 else 0
-            if drift < self.p.rebalance_threshold:
+            if drift < threshold:
                 continue
 
             delta_value = target_value - current_value
