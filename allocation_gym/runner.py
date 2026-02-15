@@ -27,6 +27,7 @@ from allocation_gym.strategies.mean_reversion import MeanReversionStrategy
 from allocation_gym.strategies.variance_kelly import VarianceKellyStrategy
 from allocation_gym.sizers.kelly import KellySizer
 from allocation_gym.analyzers.performance import PerformanceAnalyzer
+from allocation_gym.credentials import get_alpaca_keys
 
 
 STRATEGY_MAP = {
@@ -138,8 +139,7 @@ def _parse_min_weights(raw):
 def build_cerebro(args, config: BacktestConfig) -> bt.Cerebro:
     cerebro = bt.Cerebro()
 
-    api_key = os.getenv("ALPACA_API_KEY", "")
-    secret_key = os.getenv("ALPACA_SECRET_KEY", "")
+    api_key, secret_key = get_alpaca_keys()
 
     for symbol in args.symbols:
         if args.data_source == "alpaca" and api_key and secret_key:
