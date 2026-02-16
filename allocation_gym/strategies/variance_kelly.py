@@ -37,6 +37,8 @@ class VarianceKellyStrategy(bt.Strategy):
         self.bar_count = 0
         self._prev_month = None
 
+        self._initial_alloc_done = False
+
         for data in self.datas:
             name = data._name
             td = 365 if "BTC" in name.upper() else self.p.trading_days
@@ -66,6 +68,20 @@ class VarianceKellyStrategy(bt.Strategy):
     def next(self):
         self.bar_count += 1
         month_end = self._is_month_end()
+
+        # On first bar, buy into min_weight positions immediately
+        if not self._initial_alloc_done and self.p.min_weights:
+            self._initial_alloc_done = True
+            equity = self.broker.getvalue()
+            for data in self.datas:
+                name = data._name
+                min_w = self.p.min_weights.get(name, 0)
+                if min_w > 0:
+                    target_value = min_w * equity
+                    shares = int(target_value / data.close[0])
+                    if shares > 0:
+                        self.buy(data=data, size=shares)
+            return
 
         # Regular rebalance cadence, or force on month-end
         if not month_end and self.bar_count % self.p.rebalance_days != 0:
