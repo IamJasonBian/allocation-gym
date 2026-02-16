@@ -79,6 +79,60 @@ def _load_backtest_data(symbol, start, end, data_source):
         return df
 
 
+def _parse_min_weights(raw):
+    if not raw:
+        return {}
+    weights = {}
+    for pair in raw:
+        sym, val = pair.split("=")
+        weights[sym.strip()] = float(val.strip())
+    return weights
+
+
+def _run_forward_test(parsed):
+    """Run multi-asset forward test with Kelly strategy."""
+    symbols = parsed.symbols or ["BTC", "SPY", "GLD", "QQQ"]
+    min_weights = _parse_min_weights(parsed.min_weight)
+    n_days = parsed.n_days
+    n_scenarios = parsed.n_scenarios
+    seed = parsed.seed if parsed.seed >= 0 else None
+    start = parsed.start or "2023-02-15"
+    end = parsed.end or "2026-02-15"
+
+    print(f"\n{'='*60}")
+    print(f"  FORWARD TEST: Kelly Strategy on Simulated Paths")
+    print(f"  Symbols:    {', '.join(symbols)}")
+    if min_weights:
+        for s, w in min_weights.items():
+            print(f"  Min Weight: {s} >= {w*100:.0f}%")
+    print(f"  Scenarios:  {n_scenarios}")
+    print(f"  Horizon:    {n_days} days")
+    print(f"  Calibration: {start} to {end}")
+    print(f"{'='*60}")
+
+    # Load historical data for each symbol
+    print(f"\n  Loading historical data for calibration...")
+    symbol_dfs = {}
+    for sym in symbols:
+        df = _load_backtest_data(sym, start, end, parsed.data_source)
+        symbol_dfs[sym] = df
+        print(f"    {sym}: {len(df)} bars ({df.index[0].date()} to {df.index[-1].date()})")
+
+    from allocation_gym.simulation.forward_test import (
+        run_forward_test, print_forward_test_summary,
+    )
+
+    results = run_forward_test(
+        symbol_dfs=symbol_dfs,
+        min_weights=min_weights,
+        n_scenarios=n_scenarios,
+        n_days=n_days,
+        seed=seed or 42,
+    )
+
+    print_forward_test_summary(results, n_days=n_days)
+
+
 def run(args=None):
     parser = argparse.ArgumentParser(
         description="Forward Monte Carlo simulation (GBM)"
@@ -112,7 +166,22 @@ def run(args=None):
     parser.add_argument("--end", default=None,
                         help="Backtest end date (YYYY-MM-DD)")
 
+    # Forward test mode (multi-asset Kelly stress test)
+    parser.add_argument("--forward-test", action="store_true",
+                        help="Run Kelly strategy on simulated forward paths")
+    parser.add_argument("--symbols", nargs="+", default=None,
+                        help="Symbols for forward test (e.g. BTC SPY GLD QQQ)")
+    parser.add_argument("--min-weight", nargs="*", default=[],
+                        help="Min weight constraints for forward test (e.g. BTC=0.50)")
+    parser.add_argument("--n-scenarios", type=int, default=50,
+                        help="Number of forward test scenarios (default: 50)")
+
     parsed = parser.parse_args(args)
+
+    # ── Forward test mode ──
+    if parsed.forward_test:
+        _run_forward_test(parsed)
+        return {}
 
     seed = parsed.seed if parsed.seed >= 0 else None
     is_crypto = "/" in parsed.symbol or parsed.symbol.upper() in {"BTC", "ETH", "SOL"}
