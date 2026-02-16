@@ -19,3 +19,4 @@ dev = ["pytest>=7.0"]
 
 [project.scripts]
 allocation-gym = "allocation_gym.runner:main"
+allocation-gym-sim = "allocation_gym.simulation.runner:main"
