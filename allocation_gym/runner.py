@@ -187,6 +187,78 @@ def build_cerebro(args, config: BacktestConfig) -> bt.Cerebro:
     return cerebro
 
 
+def _print_orders(analyzer):
+    """Print the historical order book."""
+    orders = analyzer.get_orders()
+    if not orders:
+        print("\nNo orders executed.")
+        return
+
+    print("\n" + "=" * 80)
+    print("  HISTORICAL ORDER BOOK")
+    print("=" * 80)
+    print(f"  {'Date':<12} {'Symbol':<8} {'Side':<6} {'Shares':>8} {'Price':>10} {'Value':>12}")
+    print("  " + "-" * 68)
+
+    for o in sorted(orders, key=lambda x: x["dt"]):
+        dt_str = o["dt"].strftime("%Y-%m-%d") if hasattr(o["dt"], "strftime") else str(o["dt"])[:10]
+        value = abs(o["size"] * o["price"])
+        print(f"  {dt_str:<12} {o['symbol']:<8} {o['side'].upper():<6} "
+              f"{abs(o['size']):>8.0f} {o['price']:>10.2f} ${value:>11,.2f}")
+
+    buy_val = sum(abs(o["size"] * o["price"]) for o in orders if o["side"] == "buy")
+    sell_val = sum(abs(o["size"] * o["price"]) for o in orders if o["side"] == "sell")
+    print("  " + "-" * 68)
+    print(f"  Total buys:  ${buy_val:>11,.2f}  ({len([o for o in orders if o['side']=='buy'])} orders)")
+    print(f"  Total sells: ${sell_val:>11,.2f}  ({len([o for o in orders if o['side']=='sell'])} orders)")
+    print("=" * 80)
+
+
+def _print_allocation(analyzer, symbols):
+    """Print daily allocation table with value and P&L."""
+    dates, positions = analyzer.get_daily_positions()
+    if not dates:
+        print("\nNo allocation data.")
+        return
+
+    # Print header
+    print("\n" + "=" * (36 + 22 * len(symbols)))
+    print("  DAILY ALLOCATION / VALUE / P&L")
+    print("=" * (36 + 22 * len(symbols)))
+
+    # Column headers
+    sym_headers = ""
+    for s in symbols:
+        sym_headers += f" {s:>8} {'Wt%':>5}"
+    print(f"  {'Date':<12} {'Equity':>12} {'Cash':>10}{sym_headers} {'Day P&L':>10}")
+    print("  " + "-" * (32 + 22 * len(symbols)))
+
+    prev_equity = None
+    _, equity_values = analyzer.get_equity_curve()
+
+    for i, (dt, snap) in enumerate(zip(dates, positions)):
+        equity = equity_values[i]
+        day_pnl = equity - prev_equity if prev_equity is not None else 0
+        prev_equity = equity
+
+        dt_str = dt.strftime("%Y-%m-%d") if hasattr(dt, "strftime") else str(dt)[:10]
+        row = f"  {dt_str:<12} ${equity:>11,.2f} ${snap['cash']:>9,.0f}"
+
+        for s in symbols:
+            if s in snap:
+                val = snap[s]["value"]
+                wt = snap[s]["weight"] * 100
+                row += f" ${val:>7,.0f} {wt:>4.1f}%"
+            else:
+                row += f" {'$0':>8} {'0.0%':>5}"
+
+        pnl_str = f"${day_pnl:>+9,.0f}" if day_pnl != 0 else f"{'$0':>10}"
+        row += f" {pnl_str}"
+        print(row)
+
+    print("=" * (36 + 22 * len(symbols)))
+
+
 def run(args=None):
     parser = argparse.ArgumentParser(description="allocation-gym backtester")
     parser.add_argument("--strategy", required=True, choices=STRATEGY_MAP.keys())
@@ -199,6 +271,10 @@ def run(args=None):
     parser.add_argument("--cash", type=float, default=100_000)
     parser.add_argument("--no-plot", action="store_true",
                         help="Disable auto-plot")
+    parser.add_argument("--print-orders", action="store_true",
+                        help="Print historical order book (all fills)")
+    parser.add_argument("--print-allocation", action="store_true",
+                        help="Print daily allocation, value, and P&L")
 
     args = parser.parse_args(args)
     config = BacktestConfig(initial_cash=args.cash)
@@ -234,11 +310,18 @@ def run(args=None):
             print(f"  {label:.<35} {v}")
     print("=" * 60)
 
+    analyzer_inst = results[0].analyzers.performanceanalyzer
+
+    if args.print_orders:
+        _print_orders(analyzer_inst)
+
+    if args.print_allocation:
+        _print_allocation(analyzer_inst, args.symbols)
+
     if not args.no_plot:
         from allocation_gym.plotting import plot_backtest
-        analyzer = results[0].analyzers.performanceanalyzer
         plot_backtest(
-            analyzer=analyzer,
+            analyzer=analyzer_inst,
             cerebro_result=results[0],
             strategy_name=args.strategy,
             symbols=args.symbols,

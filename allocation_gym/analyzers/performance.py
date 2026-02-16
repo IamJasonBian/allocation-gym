@@ -22,11 +22,26 @@ class PerformanceAnalyzer(bt.Analyzer):
         self.daily_dates = []
         self.trades = []
         self.orders = []      # all filled orders (for trade markers)
+        self.daily_positions = []  # per-day position snapshots
         self.initial_cash = self.strategy.broker.getvalue()
 
     def next(self):
-        self.daily_values.append(self.strategy.broker.getvalue())
+        portfolio_value = self.strategy.broker.getvalue()
+        self.daily_values.append(portfolio_value)
         self.daily_dates.append(self.strategy.data.datetime.date(0))
+
+        # Snapshot per-symbol positions
+        snap = {"cash": self.strategy.broker.getcash()}
+        for data in self.strategy.datas:
+            pos = self.strategy.getposition(data)
+            mkt_val = pos.size * data.close[0]
+            snap[data._name] = {
+                "size": pos.size,
+                "price": data.close[0],
+                "value": round(mkt_val, 2),
+                "weight": round(mkt_val / portfolio_value, 4) if portfolio_value > 0 else 0,
+            }
+        self.daily_positions.append(snap)
 
     def notify_order(self, order):
         if order.status == order.Completed:
@@ -109,3 +124,6 @@ class PerformanceAnalyzer(bt.Analyzer):
 
     def get_trades(self):
         return self.trades
+
+    def get_daily_positions(self):
+        return self.daily_dates, self.daily_positions
