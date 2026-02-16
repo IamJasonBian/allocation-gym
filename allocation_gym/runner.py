@@ -197,7 +197,8 @@ def run(args=None):
     parser.add_argument("--start", default="2024-02-15")
     parser.add_argument("--end", default="2025-02-15")
     parser.add_argument("--cash", type=float, default=100_000)
-    parser.add_argument("--plot", action="store_true")
+    parser.add_argument("--no-plot", action="store_true",
+                        help="Disable auto-plot")
 
     args = parser.parse_args(args)
     config = BacktestConfig(initial_cash=args.cash)
@@ -233,8 +234,15 @@ def run(args=None):
             print(f"  {label:.<35} {v}")
     print("=" * 60)
 
-    if args.plot:
-        cerebro.plot(style="candlestick")
+    if not args.no_plot:
+        from allocation_gym.plotting import plot_backtest
+        analyzer = results[0].analyzers.performanceanalyzer
+        plot_backtest(
+            analyzer=analyzer,
+            cerebro_result=results[0],
+            strategy_name=args.strategy,
+            symbols=args.symbols,
+        )
 
     return perf
 
