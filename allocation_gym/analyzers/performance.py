@@ -45,9 +45,11 @@ class PerformanceAnalyzer(bt.Analyzer):
 
     def notify_order(self, order):
         if order.status == order.Completed:
+            initial_refs = getattr(self.strategy, "_initial_order_refs", set())
+            is_initial = order.ref in initial_refs
             self.orders.append({
                 "symbol": order.data._name,
-                "side": "buy" if order.isbuy() else "sell",
+                "side": "portfolio" if is_initial else ("buy" if order.isbuy() else "sell"),
                 "size": order.executed.size,
                 "price": order.executed.price,
                 "value": order.executed.value,

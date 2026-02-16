@@ -203,12 +203,17 @@ def _print_orders(analyzer):
     for o in sorted(orders, key=lambda x: x["dt"]):
         dt_str = o["dt"].strftime("%Y-%m-%d") if hasattr(o["dt"], "strftime") else str(o["dt"])[:10]
         value = abs(o["size"] * o["price"])
-        print(f"  {dt_str:<12} {o['symbol']:<8} {o['side'].upper():<6} "
+        side_label = "PORTF" if o["side"] == "portfolio" else o["side"].upper()
+        print(f"  {dt_str:<12} {o['symbol']:<8} {side_label:<6} "
               f"{abs(o['size']):>8.0f} {o['price']:>10.2f} ${value:>11,.2f}")
 
+    port_val = sum(abs(o["size"] * o["price"]) for o in orders if o["side"] == "portfolio")
     buy_val = sum(abs(o["size"] * o["price"]) for o in orders if o["side"] == "buy")
     sell_val = sum(abs(o["size"] * o["price"]) for o in orders if o["side"] == "sell")
     print("  " + "-" * 68)
+    port_orders = [o for o in orders if o["side"] == "portfolio"]
+    if port_orders:
+        print(f"  Portfolio:   ${port_val:>11,.2f}  ({len(port_orders)} orders)")
     print(f"  Total buys:  ${buy_val:>11,.2f}  ({len([o for o in orders if o['side']=='buy'])} orders)")
     print(f"  Total sells: ${sell_val:>11,.2f}  ({len([o for o in orders if o['side']=='sell'])} orders)")
     print("=" * 80)

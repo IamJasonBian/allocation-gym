@@ -78,10 +78,16 @@ def plot_backtest(analyzer, cerebro_result, strategy_name="", symbols=None):
         ax.plot(price_dates, price_vals, label=name, color=color,
                 linewidth=1.3, alpha=0.9)
 
-        # Overlay buy/sell markers for this symbol only
+        # Overlay order markers for this symbol only
+        sym_portfolio = [o for o in orders if o["side"] == "portfolio" and o["symbol"] == name]
         sym_buys = [o for o in orders if o["side"] == "buy" and o["symbol"] == name]
         sym_sells = [o for o in orders if o["side"] == "sell" and o["symbol"] == name]
 
+        if sym_portfolio:
+            ax.scatter([o["dt"] for o in sym_portfolio],
+                       [o["price"] for o in sym_portfolio],
+                       marker="s", color="#FFD600", s=60,
+                       zorder=6, label="Portfolio", edgecolors="black", linewidths=0.6)
         if sym_buys:
             ax.scatter([o["dt"] for o in sym_buys],
                        [o["price"] for o in sym_buys],

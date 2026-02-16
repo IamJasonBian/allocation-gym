@@ -38,6 +38,7 @@ class VarianceKellyStrategy(bt.Strategy):
         self._prev_month = None
 
         self._initial_alloc_done = False
+        self._initial_order_refs = set()
 
         for data in self.datas:
             name = data._name
@@ -80,7 +81,8 @@ class VarianceKellyStrategy(bt.Strategy):
                     target_value = min_w * equity
                     shares = int(target_value / data.close[0])
                     if shares > 0:
-                        self.buy(data=data, size=shares)
+                        o = self.buy(data=data, size=shares)
+                        self._initial_order_refs.add(o.ref)
             return
 
         # Regular rebalance cadence, or force on month-end
