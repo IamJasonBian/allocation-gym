@@ -1,5 +1,7 @@
 # allocation-gym
 
+Version - 0.1.0 - This is part of the [allocation-manager](https://github.com/OptimChain/allocation-manager/) system.
+
 Variance-Kelly backtesting framework built on [Backtrader](https://www.backtrader.com/).
 
 Ports the core components from the Variance-Kelly Trading Engine into a standalone backtesting framework:
