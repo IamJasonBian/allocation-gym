@@ -22,6 +22,7 @@ class MomentumStrategy(bt.Strategy):
         ("variance_lookback", 14),
         ("vr_k", 3),
         ("trading_days", 252),
+        ("signals", False),
     )
 
     def __init__(self):
@@ -29,6 +30,8 @@ class MomentumStrategy(bt.Strategy):
         self.sma = {}
         self.order_refs = {}
         self._current_expected_return = 0.10
+        self.signal_iv = None
+        self.signal_flow = None
 
         for data in self.datas:
             name = data._name
@@ -39,6 +42,12 @@ class MomentumStrategy(bt.Strategy):
                 trading_days=self.p.trading_days,
             )
             self.sma[name] = bt.indicators.SMA(data.close, period=self.p.sma_period)
+
+        if self.p.signals:
+            from allocation_gym.indicators.iv_zscore import IVZScoreIndicator
+            from allocation_gym.indicators.etf_flow import ETFFlowIndicator
+            self.signal_iv = IVZScoreIndicator(self.datas[0])
+            self.signal_flow = ETFFlowIndicator(self.datas[0])
 
     def next(self):
         for data in self.datas:
