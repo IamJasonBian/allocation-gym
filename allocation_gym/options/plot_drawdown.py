@@ -311,9 +311,9 @@ def plot_drawdown_analysis(
     plt.tight_layout(rect=[0, 0.08, 1, 0.99])
 
     # Save
-    out_path = "docs/btc_options_drawdown.png"
+    out_path = "docs/4/btc_options_drawdown.png"
     import os
-    os.makedirs("docs", exist_ok=True)
+    os.makedirs("docs/4", exist_ok=True)
     fig.savefig(out_path, dpi=150, bbox_inches="tight", facecolor="white")
     print(f"Saved to {out_path}")
 

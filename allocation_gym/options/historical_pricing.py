@@ -440,7 +440,7 @@ def _plot_historical(btc, iwm, btc_opts, iwm_opts,
     fig.autofmt_xdate(rotation=30)
     plt.tight_layout(rect=[0, 0, 1, 0.98])
 
-    out_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "docs")
+    out_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "docs", "4")
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, "btc_iwm_historical_pricing.png")
     fig.savefig(out_path, dpi=150, bbox_inches="tight", facecolor="white")

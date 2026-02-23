@@ -24,7 +24,7 @@ options/
 
 ```bash
 python -m allocation_gym.options.report
-# -> docs/btc_iwm_options_report.pdf
+# -> docs/4/btc_iwm_options_report.pdf
 ```
 
 ### BTC drawdown analysis (how options handled the crash)
@@ -34,39 +34,39 @@ python -m allocation_gym.options.drawdown_analysis --iv 0.80 --otm-pct 0.05
 # -> terminal output: roll breakdown, IV/strike sensitivity tables
 
 python -m allocation_gym.options.plot_drawdown --iv 0.80
-# -> docs/btc_options_drawdown.png (5-panel chart)
+# -> docs/4/btc_options_drawdown.png (5-panel chart)
 ```
 
 ### BTC + IWM call backtest + forward test
 
 ```bash
 python -m allocation_gym.options.backtest_forward --iv-btc 0.80 --iv-iwm 0.25
-# -> docs/btc_iwm_call_forward.png (4-panel: backtest + MC fan chart)
+# -> docs/4/btc_iwm_call_forward.png (4-panel: backtest + MC fan chart)
 ```
 
 ### IWM vol & pricing week-over-week
 
 ```bash
 python -m allocation_gym.options.iwm_vol_compare
-# -> docs/iwm_vol_compare.png (price, rolling vol, call/put bar charts)
+# -> docs/4/iwm_vol_compare.png (price, rolling vol, call/put bar charts)
 ```
 
 ### Historical pricing (6-month time series)
 
 ```bash
 python -m allocation_gym.options.historical_pricing --days 180
-# -> docs/btc_iwm_historical_pricing.png (8-panel: price, vol, options %, ratio)
+# -> docs/4/btc_iwm_historical_pricing.png (8-panel: price, vol, options %, ratio)
 ```
 
 ## Output Files
 
 | File | Description |
 |------|-------------|
-| `docs/btc_iwm_options_report.pdf` | Full report: pricing tables, charts, observations |
-| `docs/btc_options_drawdown.png` | BTC price + put strikes, returns, drawdown, premiums, vol |
-| `docs/btc_iwm_call_forward.png` | 2-week backtest + 30-day MC forward projection |
-| `docs/iwm_vol_compare.png` | IWM this-week vs last-week vol and option prices |
-| `docs/btc_iwm_historical_pricing.png` | 6-month rolling vol + options pricing history |
+| `docs/4/btc_iwm_options_report.pdf` | Full report: pricing tables, charts, observations |
+| `docs/4/btc_options_drawdown.png` | BTC price + put strikes, returns, drawdown, premiums, vol |
+| `docs/4/btc_iwm_call_forward.png` | 2-week backtest + 30-day MC forward projection |
+| `docs/4/iwm_vol_compare.png` | IWM this-week vs last-week vol and option prices |
+| `docs/4/btc_iwm_historical_pricing.png` | 6-month rolling vol + options pricing history |
 
 ## Core Components
 

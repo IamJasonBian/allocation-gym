@@ -32,7 +32,7 @@ from allocation_gym.options.historical_pricing import (
 )
 
 
-DOCS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "docs")
+DOCS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "docs", "4")
 TMP_DIR = os.path.join(DOCS_DIR, ".tmp_report")
 
 
