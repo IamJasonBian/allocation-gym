@@ -22,6 +22,7 @@ class MeanReversionStrategy(bt.Strategy):
         ("variance_lookback", 14),
         ("vr_k", 3),
         ("trading_days", 252),
+        ("signals", False),
     )
 
     def __init__(self):
@@ -30,6 +31,8 @@ class MeanReversionStrategy(bt.Strategy):
         self.sma20 = {}
         self.order_refs = {}
         self._current_expected_return = 0.05
+        self.signal_iv = None
+        self.signal_flow = None
 
         for data in self.datas:
             name = data._name
@@ -41,6 +44,12 @@ class MeanReversionStrategy(bt.Strategy):
             )
             self.rsi[name] = bt.indicators.RSI(data.close, period=self.p.rsi_period)
             self.sma20[name] = bt.indicators.SMA(data.close, period=20)
+
+        if self.p.signals:
+            from allocation_gym.indicators.iv_zscore import IVZScoreIndicator
+            from allocation_gym.indicators.etf_flow import ETFFlowIndicator
+            self.signal_iv = IVZScoreIndicator(self.datas[0])
+            self.signal_flow = ETFFlowIndicator(self.datas[0])
 
     def next(self):
         for data in self.datas:
