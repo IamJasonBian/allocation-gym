@@ -632,18 +632,18 @@ def _plot_dashboard(top_long: list, top_short: list, all_results: list,
     ax1 = fig.add_subplot(gs[0, 0])
     all_corr3 = [r["corr_3m"] for r in all_results]
     all_vol = [r["vol_30d"] for r in all_results]
-    ax1.scatter(all_corr3, all_vol, alpha=0.3, s=20, color="gray", label="All assets")
+    ax1.scatter(all_corr3, all_vol, alpha=0.3, s=40, color="gray", label="All assets")
 
     for r in top_long:
-        ax1.scatter(r["corr_3m"], r["vol_30d"], s=80, color="blue", zorder=5,
-                    edgecolors="black", linewidths=0.5)
+        ax1.scatter(r["corr_3m"], r["vol_30d"], s=160, color="blue", zorder=5,
+                    edgecolors="black", linewidths=0.8)
         ax1.annotate(r["ticker"], (r["corr_3m"], r["vol_30d"]),
-                     fontsize=9, ha="center", va="bottom", color="blue")
+                     fontsize=11, fontweight="bold", ha="center", va="bottom", color="blue")
     for r in top_short:
-        ax1.scatter(r["corr_3m"], r["vol_30d"], s=80, color="red", zorder=5,
-                    edgecolors="black", linewidths=0.5)
+        ax1.scatter(r["corr_3m"], r["vol_30d"], s=160, color="red", zorder=5,
+                    edgecolors="black", linewidths=0.8)
         ax1.annotate(r["ticker"], (r["corr_3m"], r["vol_30d"]),
-                     fontsize=9, ha="center", va="bottom", color="red")
+                     fontsize=11, fontweight="bold", ha="center", va="bottom", color="red")
     ax1.axvline(x=0, color="black", linewidth=0.8, linestyle="--")
     ax1.set_xlabel("3M Correlation with BTC", fontsize=13)
     ax1.set_ylabel("30d Realized Vol", fontsize=13)
