@@ -405,9 +405,15 @@ def run_analysis():
             )
 
     # ---------------------------------------------------------------------------
+    # CSV exports
+    # ---------------------------------------------------------------------------
+    print("\nExporting CSV data...")
+    _export_csvs(results, top_long, top_short, btc_spot, btc_vol, docs_dir)
+
+    # ---------------------------------------------------------------------------
     # Charts
     # ---------------------------------------------------------------------------
-    print("\n\nGenerating charts...")
+    print("\nGenerating charts...")
 
     # Chart 1: Top-10 Long Thesis — Price Performance
     _plot_price_chart(top_long, btc_prices, "BTC Long Thesis — Top 10 Reallocation Candidates",
@@ -430,6 +436,97 @@ def run_analysis():
                     os.path.join(docs_dir, "btc_reallocation_dashboard.png"))
 
     print("\nDone! All outputs saved to docs/")
+
+
+# ---------------------------------------------------------------------------
+# CSV export helpers
+# ---------------------------------------------------------------------------
+
+def _export_csvs(results: list, top_long: list, top_short: list,
+                 btc_spot: float, btc_vol: float, docs_dir: str):
+    """Write all analysis data to CSV files."""
+    import csv
+
+    # 1. Full universe — all assets with correlations, vol, put pricing, scores
+    path_all = os.path.join(docs_dir, "btc_correlation_all_assets.csv")
+    sorted_all = sorted(results, key=lambda x: abs(x["corr_3m"]), reverse=True)
+    with open(path_all, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow([
+            "ticker", "spot", "vol_30d",
+            "corr_3m", "corr_6m", "corr_12m",
+            "put_pct_3m", "put_pct_6m", "put_pct_12m",
+            "hedge_cost_3m", "hedge_cost_6m", "hedge_cost_12m",
+            "ytd_return", "1y_return",
+            "score_long", "score_short",
+        ])
+        for r in sorted_all:
+            w.writerow([
+                r["ticker"], f"{r['spot']:.4f}", f"{r['vol_30d']:.6f}",
+                f"{r['corr_3m']:.6f}", f"{r['corr_6m']:.6f}", f"{r['corr_12m']:.6f}",
+                f"{r['put_pct_3m']:.6f}", f"{r['put_pct_6m']:.6f}", f"{r['put_pct_12m']:.6f}",
+                f"{r['hedge_cost_3m']:.2f}", f"{r['hedge_cost_6m']:.2f}", f"{r['hedge_cost_12m']:.2f}",
+                f"{r['ytd_ret']:.6f}", f"{r['one_yr_ret']:.6f}",
+                f"{r['score_long']:.6f}", f"{r['score_short']:.6f}",
+            ])
+    print(f"  -> {path_all}")
+
+    # 2. Top-10 long thesis
+    path_long = os.path.join(docs_dir, "btc_top10_long_thesis.csv")
+    with open(path_long, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow([
+            "rank", "ticker", "spot", "vol_30d",
+            "corr_3m", "corr_6m", "corr_12m",
+            "put_pct_3m", "put_pct_6m", "put_pct_12m",
+            "hedge_cost_3m", "1y_return", "score_long",
+        ])
+        for i, r in enumerate(top_long):
+            w.writerow([
+                i + 1, r["ticker"], f"{r['spot']:.4f}", f"{r['vol_30d']:.6f}",
+                f"{r['corr_3m']:.6f}", f"{r['corr_6m']:.6f}", f"{r['corr_12m']:.6f}",
+                f"{r['put_pct_3m']:.6f}", f"{r['put_pct_6m']:.6f}", f"{r['put_pct_12m']:.6f}",
+                f"{r['hedge_cost_3m']:.2f}", f"{r['one_yr_ret']:.6f}",
+                f"{r['score_long']:.6f}",
+            ])
+    print(f"  -> {path_long}")
+
+    # 3. Top-10 short thesis
+    path_short = os.path.join(docs_dir, "btc_top10_short_thesis.csv")
+    with open(path_short, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow([
+            "rank", "ticker", "spot", "vol_30d",
+            "corr_3m", "corr_6m", "corr_12m",
+            "put_pct_3m", "put_pct_6m", "put_pct_12m",
+            "hedge_cost_3m", "1y_return", "score_short",
+        ])
+        for i, r in enumerate(top_short):
+            w.writerow([
+                i + 1, r["ticker"], f"{r['spot']:.4f}", f"{r['vol_30d']:.6f}",
+                f"{r['corr_3m']:.6f}", f"{r['corr_6m']:.6f}", f"{r['corr_12m']:.6f}",
+                f"{r['put_pct_3m']:.6f}", f"{r['put_pct_6m']:.6f}", f"{r['put_pct_12m']:.6f}",
+                f"{r['hedge_cost_3m']:.2f}", f"{r['one_yr_ret']:.6f}",
+                f"{r['score_short']:.6f}",
+            ])
+    print(f"  -> {path_short}")
+
+    # 4. Metadata / run info
+    from datetime import datetime as _dt
+    path_meta = os.path.join(docs_dir, "btc_correlation_metadata.csv")
+    with open(path_meta, "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["parameter", "value"])
+        w.writerow(["run_date", _dt.now().strftime("%Y-%m-%d %H:%M")])
+        w.writerow(["btc_spot", f"{btc_spot:.2f}"])
+        w.writerow(["btc_30d_vol", f"{btc_vol:.6f}"])
+        w.writerow(["universe_size", len(results)])
+        w.writerow(["portfolio_value", PORTFOLIO_VALUE])
+        w.writerow(["reallocation_pct", REALLOC_PCT])
+        w.writerow(["risk_free_rate", RISK_FREE_RATE])
+        w.writerow(["lookback_period", "2y"])
+        w.writerow(["correlation_windows", "63d / 126d / 252d"])
+    print(f"  -> {path_meta}")
 
 
 # ---------------------------------------------------------------------------
@@ -638,12 +735,14 @@ def _plot_dashboard(top_long: list, top_short: list, all_results: list,
         ax1.scatter(r["corr_3m"], r["vol_30d"], s=160, color="blue", zorder=5,
                     edgecolors="black", linewidths=0.8)
         ax1.annotate(r["ticker"], (r["corr_3m"], r["vol_30d"]),
-                     fontsize=11, fontweight="bold", ha="center", va="bottom", color="blue")
+                     fontsize=11, fontweight="bold", ha="center", va="bottom", color="blue",
+                     xytext=(0, 8), textcoords="offset points")
     for r in top_short:
         ax1.scatter(r["corr_3m"], r["vol_30d"], s=160, color="red", zorder=5,
                     edgecolors="black", linewidths=0.8)
         ax1.annotate(r["ticker"], (r["corr_3m"], r["vol_30d"]),
-                     fontsize=11, fontweight="bold", ha="center", va="bottom", color="red")
+                     fontsize=11, fontweight="bold", ha="center", va="bottom", color="red",
+                     xytext=(0, 8), textcoords="offset points")
     ax1.axvline(x=0, color="black", linewidth=0.8, linestyle="--")
     ax1.set_xlabel("3M Correlation with BTC", fontsize=13)
     ax1.set_ylabel("30d Realized Vol", fontsize=13)
