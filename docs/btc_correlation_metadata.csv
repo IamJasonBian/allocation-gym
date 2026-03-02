@@ -1,8 +1,8 @@
 parameter,value
-run_date,2026-02-25 18:31
-btc_spot,68340.87
-btc_30d_vol,0.692936
-universe_size,227
+run_date,2026-03-02 17:55
+btc_spot,69320.55
+btc_30d_vol,0.677616
+universe_size,226
 portfolio_value,1000000
 reallocation_pct,0.25
 risk_free_rate,0.045
