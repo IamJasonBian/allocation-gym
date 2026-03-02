@@ -385,7 +385,7 @@ def _plot_combined(
 
     out_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-        "docs", "btc_iwm_call_forward.png",
+        "docs", "4", "btc_iwm_call_forward.png",
     )
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     fig.savefig(out_path, dpi=150, bbox_inches="tight", facecolor="white")

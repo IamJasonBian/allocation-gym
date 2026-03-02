@@ -239,7 +239,7 @@ def score_short_btc(corr_3m: float, corr_6m: float, corr_12m: float,
 # ---------------------------------------------------------------------------
 
 def run_analysis():
-    docs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs")
+    docs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs", "6")
     os.makedirs(docs_dir, exist_ok=True)
 
     # Fetch data
@@ -450,7 +450,7 @@ def run_analysis():
     _plot_dashboard(top_long, top_short, results, btc_prices, btc_spot, btc_vol,
                     os.path.join(docs_dir, "btc_reallocation_dashboard.png"))
 
-    print("\nDone! All outputs saved to docs/")
+    print("\nDone! All outputs saved to docs/6/")
 
 
 # ---------------------------------------------------------------------------

@@ -25,8 +25,8 @@ import numpy as np
 
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
-DOCS_DIR = os.path.join(BASE_DIR, "docs")
-REPORTS_DIR = os.path.join(BASE_DIR, "reports")
+DOCS_DIR = os.path.join(BASE_DIR, "docs", "6")
+REPORTS_DIR = os.path.join(BASE_DIR, "docs", "6")
 
 
 # ---------------------------------------------------------------------------
