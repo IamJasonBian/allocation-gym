@@ -379,7 +379,7 @@ def _plot_vol_comparison(
 
     plt.tight_layout()
 
-    out_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "docs")
+    out_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "docs", "4")
     os.makedirs(out_dir, exist_ok=True)
     out_path = os.path.join(out_dir, "iwm_vol_compare.png")
     fig.savefig(out_path, dpi=150, bbox_inches="tight", facecolor="white")

@@ -5,7 +5,7 @@ Gold vs BTC Asset Allocation Analysis
 Two-asset efficient frontier, risk-return decomposition, and
 rolling-correlation study using monthly close data (Jan 2020 – Dec 2025).
 
-Generates SVG plots in docs/ — no external dependencies required.
+Generates SVG plots in docs/3/ — no external dependencies required.
 """
 
 from __future__ import annotations
@@ -688,7 +688,7 @@ def plot_annual_returns(dates, gold_rets, btc_rets, out_path):
 # ---------------------------------------------------------------------------
 
 def main():
-    docs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs")
+    docs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs", "3")
     os.makedirs(docs_dir, exist_ok=True)
 
     print("=" * 65)
@@ -773,7 +773,7 @@ def main():
     plot_annual_returns(DATES, gold_rets, btc_rets,
                         os.path.join(docs_dir, "gold_btc_annual_returns.svg"))
 
-    print("\nDone. All plots saved to docs/")
+    print("\nDone. All plots saved to docs/3/")
 
 
 if __name__ == "__main__":

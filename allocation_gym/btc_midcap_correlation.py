@@ -239,7 +239,7 @@ def score_short_btc(corr_3m: float, corr_6m: float, corr_12m: float,
 # ---------------------------------------------------------------------------
 
 def run_analysis():
-    docs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs")
+    docs_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs", "6")
     os.makedirs(docs_dir, exist_ok=True)
 
     # Fetch data
@@ -411,6 +411,21 @@ def run_analysis():
     _export_csvs(results, top_long, top_short, btc_spot, btc_vol, docs_dir)
 
     # ---------------------------------------------------------------------------
+    # IWN & CRWD deep-dive: put options + portfolio sizing
+    # ---------------------------------------------------------------------------
+    print("\n\nRunning IWN & CRWD put options / portfolio sizing deep-dive...")
+    _deep_dive_put_sizing(
+        focus_tickers=["IWN", "CRWD"],
+        results=results,
+        prices=prices,
+        btc_prices=btc_prices,
+        btc_returns=btc_returns,
+        btc_spot=btc_spot,
+        btc_vol=btc_vol,
+        docs_dir=docs_dir,
+    )
+
+    # ---------------------------------------------------------------------------
     # Charts
     # ---------------------------------------------------------------------------
     print("\nGenerating charts...")
@@ -435,7 +450,343 @@ def run_analysis():
     _plot_dashboard(top_long, top_short, results, btc_prices, btc_spot, btc_vol,
                     os.path.join(docs_dir, "btc_reallocation_dashboard.png"))
 
-    print("\nDone! All outputs saved to docs/")
+    print("\nDone! All outputs saved to docs/6/")
+
+
+# ---------------------------------------------------------------------------
+# IWN & CRWD deep-dive: put options + portfolio sizing
+# ---------------------------------------------------------------------------
+
+def _deep_dive_put_sizing(
+    focus_tickers: List[str],
+    results: list,
+    prices: Dict,
+    btc_prices,
+    btc_returns: np.ndarray,
+    btc_spot: float,
+    btc_vol: float,
+    docs_dir: str,
+):
+    """Full put-option strike ladder and portfolio sizing for focus assets."""
+    import csv
+    from allocation_gym.options.black_scholes import bs_put_price as _bs_put
+
+    result_map = {r["ticker"]: r for r in results}
+
+    # Strike offsets: ATM, 5% OTM, 10% OTM, 15% OTM, 20% OTM
+    strike_offsets = [1.00, 0.95, 0.90, 0.85, 0.80]
+    tenors = [("1mo", 1 / 12), ("3mo", 0.25), ("6mo", 0.50), ("9mo", 0.75), ("12mo", 1.00)]
+
+    # Portfolio sizing: what % of $1M to allocate at different hedge budgets
+    hedge_budgets_pct = [0.005, 0.01, 0.015, 0.02, 0.03, 0.05]  # 0.5% to 5% of portfolio
+
+    all_rows = []  # for consolidated CSV
+
+    for ticker in focus_tickers:
+        if ticker not in result_map:
+            print(f"  WARNING: {ticker} not in results, skipping")
+            continue
+
+        r = result_map[ticker]
+        spot = r["spot"]
+        vol = r["vol_30d"]
+        corr_3m = r["corr_3m"]
+        corr_6m = r["corr_6m"]
+        corr_12m = r["corr_12m"]
+
+        print(f"\n{'=' * 100}")
+        print(f"  {ticker} DEEP DIVE — Put Options & Portfolio Sizing")
+        print(f"  Spot: ${spot:,.2f}  |  30d Vol: {vol:.1%}  |  BTC Corr: 3M={corr_3m:+.3f}  6M={corr_6m:+.3f}  12M={corr_12m:+.3f}")
+        print(f"{'=' * 100}")
+
+        # ---- Strike Ladder ----
+        print(f"\n  {'Strike Ladder — ATM Put Pricing':^80}")
+        print(f"  {'':>10}", end="")
+        for label, _ in tenors:
+            print(f"{'':>4}{label:>8} {'($/sh)':>8}", end="")
+        print()
+
+        hdr = f"  {'Strike':>10}"
+        for _ in tenors:
+            hdr += f"  {'%Spot':>8} {'Price':>8}"
+        print(hdr)
+        print("  " + "-" * (10 + len(tenors) * 18))
+
+        ladder_rows = []
+        for offset in strike_offsets:
+            strike = spot * offset
+            moneyness_label = "ATM" if offset == 1.0 else f"{(1 - offset) * 100:.0f}% OTM"
+            row_str = f"  ${strike:>8,.2f}"
+            row_data = {"ticker": ticker, "strike": strike, "moneyness": moneyness_label}
+            for label, T in tenors:
+                price = _bs_put(spot, strike, T, RISK_FREE_RATE, vol)
+                pct = price / spot * 100
+                row_str += f"  {pct:>7.2f}% ${price:>7.2f}"
+                row_data[f"put_{label}_pct"] = pct / 100
+                row_data[f"put_{label}_price"] = price
+            print(row_str + f"  ({moneyness_label})")
+            ladder_rows.append(row_data)
+
+        # ---- Breakeven Analysis ----
+        print(f"\n  {'Breakeven Levels (spot must fall below this to profit on put)':^80}")
+        print(f"  {'Strike':>10}", end="")
+        for label, _ in tenors:
+            print(f"  {label + ' BE':>10}", end="")
+        print()
+        print("  " + "-" * (10 + len(tenors) * 12))
+
+        for offset in strike_offsets:
+            strike = spot * offset
+            moneyness_label = "ATM" if offset == 1.0 else f"{(1 - offset) * 100:.0f}% OTM"
+            row_str = f"  ${strike:>8,.2f}"
+            for label, T in tenors:
+                premium = _bs_put(spot, strike, T, RISK_FREE_RATE, vol)
+                breakeven = strike - premium
+                be_pct = (breakeven / spot - 1) * 100
+                row_str += f"  {be_pct:>+9.1f}%"
+            print(row_str + f"  ({moneyness_label})")
+
+        # ---- Portfolio Sizing ----
+        print(f"\n  {'Portfolio Sizing — Shares & Puts for $1M Portfolio':^80}")
+        print(f"  {'Alloc%':>8} {'Notional':>12} {'Shares':>10} {'ATM 3M Put':>12} {'Hedge Cost':>12} {'Hedge/Port':>12} {'Net Exp':>12}")
+        print("  " + "-" * 82)
+
+        sizing_rows = []
+        for alloc_pct in [0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.40, 0.50]:
+            notional = PORTFOLIO_VALUE * alloc_pct
+            shares = notional / spot
+            atm_put = _bs_put(spot, spot, 0.25, RISK_FREE_RATE, vol)
+            hedge_cost = atm_put * shares
+            hedge_port_pct = hedge_cost / PORTFOLIO_VALUE
+            net_exposure = notional - hedge_cost
+            print(
+                f"  {alloc_pct:>7.0%} ${notional:>10,.0f} {shares:>10,.1f} "
+                f"${atm_put:>10,.2f} ${hedge_cost:>10,.0f} {hedge_port_pct:>11.2%} ${net_exposure:>10,.0f}"
+            )
+            sizing_rows.append({
+                "ticker": ticker, "alloc_pct": alloc_pct, "notional": notional,
+                "shares": shares, "atm_3m_put": atm_put, "hedge_cost": hedge_cost,
+                "hedge_port_pct": hedge_port_pct, "net_exposure": net_exposure,
+            })
+
+        # ---- Budget-constrained sizing ----
+        print(f"\n  {'Budget-Constrained Sizing — Max allocation given hedge budget':^80}")
+        print(f"  {'Budget':>10} {'Budget $':>10} {'Max Alloc%':>12} {'Max Notional':>14} {'Shares':>10} {'Hedged?':>8}")
+        print("  " + "-" * 68)
+
+        budget_rows = []
+        for budget_pct in hedge_budgets_pct:
+            budget_dollar = PORTFOLIO_VALUE * budget_pct
+            atm_put = _bs_put(spot, spot, 0.25, RISK_FREE_RATE, vol)
+            put_per_share = atm_put
+            max_shares = budget_dollar / put_per_share if put_per_share > 0 else 0
+            max_notional = max_shares * spot
+            max_alloc = max_notional / PORTFOLIO_VALUE
+            print(
+                f"  {budget_pct:>9.1%} ${budget_dollar:>8,.0f} {max_alloc:>11.1%} "
+                f"${max_notional:>12,.0f} {max_shares:>10,.1f} {'YES':>8}"
+            )
+            budget_rows.append({
+                "ticker": ticker, "hedge_budget_pct": budget_pct,
+                "budget_dollar": budget_dollar, "max_alloc_pct": max_alloc,
+                "max_notional": max_notional, "max_shares": max_shares,
+            })
+
+        # ---- BTC correlation-adjusted sizing recommendation ----
+        print(f"\n  {'Correlation-Adjusted Recommendation':^80}")
+        abs_corr = abs(corr_3m)
+        if corr_3m < -0.05:
+            thesis = "HEDGE (negative BTC correlation)"
+            # Negative corr = good diversifier, size up
+            rec_alloc = min(0.25 + abs_corr * 0.5, 0.40)
+        elif corr_3m > 0.15:
+            thesis = "CORRELATED (positive BTC correlation)"
+            # Positive corr = amplifies BTC risk, size down or hedge fully
+            rec_alloc = max(0.25 - abs_corr * 0.3, 0.10)
+        else:
+            thesis = "NEUTRAL (low BTC correlation)"
+            rec_alloc = 0.20
+        rec_notional = PORTFOLIO_VALUE * rec_alloc
+        rec_shares = rec_notional / spot
+        rec_put = _bs_put(spot, spot, 0.25, RISK_FREE_RATE, vol)
+        rec_hedge = rec_put * rec_shares
+
+        print(f"  Thesis:            {thesis}")
+        print(f"  3M BTC Corr:       {corr_3m:+.3f}")
+        print(f"  Recommended Alloc: {rec_alloc:.0%} (${rec_notional:,.0f})")
+        print(f"  Shares:            {rec_shares:,.1f}")
+        print(f"  3M ATM Put Hedge:  ${rec_hedge:,.0f} ({rec_hedge / PORTFOLIO_VALUE:.2%} of portfolio)")
+
+        # ---- Export per-ticker CSV ----
+        csv_path = os.path.join(docs_dir, f"btc_{ticker.lower()}_put_sizing.csv")
+        with open(csv_path, "w", newline="") as f:
+            w = csv.writer(f)
+
+            # Section 1: Summary
+            w.writerow(["# SUMMARY"])
+            w.writerow(["ticker", "spot", "vol_30d", "corr_3m", "corr_6m", "corr_12m", "thesis", "rec_alloc_pct"])
+            w.writerow([ticker, f"{spot:.4f}", f"{vol:.6f}", f"{corr_3m:.6f}", f"{corr_6m:.6f}", f"{corr_12m:.6f}", thesis, f"{rec_alloc:.4f}"])
+            w.writerow([])
+
+            # Section 2: Strike ladder
+            w.writerow(["# STRIKE LADDER"])
+            tenor_labels = [t[0] for t in tenors]
+            header = ["strike", "moneyness"]
+            for t in tenor_labels:
+                header += [f"put_{t}_pct", f"put_{t}_price"]
+            w.writerow(header)
+            for lr in ladder_rows:
+                row = [f"{lr['strike']:.4f}", lr["moneyness"]]
+                for t in tenor_labels:
+                    row += [f"{lr[f'put_{t}_pct']:.6f}", f"{lr[f'put_{t}_price']:.4f}"]
+                w.writerow(row)
+            w.writerow([])
+
+            # Section 3: Portfolio sizing
+            w.writerow(["# PORTFOLIO SIZING"])
+            w.writerow(["alloc_pct", "notional", "shares", "atm_3m_put", "hedge_cost", "hedge_port_pct", "net_exposure"])
+            for sr in sizing_rows:
+                w.writerow([
+                    f"{sr['alloc_pct']:.4f}", f"{sr['notional']:.2f}", f"{sr['shares']:.4f}",
+                    f"{sr['atm_3m_put']:.4f}", f"{sr['hedge_cost']:.2f}",
+                    f"{sr['hedge_port_pct']:.6f}", f"{sr['net_exposure']:.2f}",
+                ])
+            w.writerow([])
+
+            # Section 4: Budget-constrained
+            w.writerow(["# BUDGET-CONSTRAINED SIZING"])
+            w.writerow(["hedge_budget_pct", "budget_dollar", "max_alloc_pct", "max_notional", "max_shares"])
+            for br in budget_rows:
+                w.writerow([
+                    f"{br['hedge_budget_pct']:.4f}", f"{br['budget_dollar']:.2f}",
+                    f"{br['max_alloc_pct']:.6f}", f"{br['max_notional']:.2f}", f"{br['max_shares']:.4f}",
+                ])
+
+        print(f"\n  -> {csv_path}")
+
+        # Collect for combined chart
+        all_rows.append({
+            "ticker": ticker, "spot": spot, "vol": vol,
+            "corr_3m": corr_3m, "corr_6m": corr_6m, "corr_12m": corr_12m,
+            "ladder": ladder_rows, "sizing": sizing_rows, "budget": budget_rows,
+            "rec_alloc": rec_alloc, "rec_hedge": rec_hedge, "thesis": thesis,
+            "price_series": prices.get(ticker),
+        })
+
+    # Generate combined chart
+    if all_rows:
+        _plot_deep_dive(all_rows, btc_prices, btc_spot, docs_dir)
+
+
+def _plot_deep_dive(focus_data: list, btc_prices, btc_spot: float, docs_dir: str):
+    """4-panel chart for IWN/CRWD deep-dive."""
+    n = len(focus_data)
+    fig, axes = plt.subplots(2, 2, figsize=(20, 14))
+    fig.suptitle("IWN & CRWD — Put Options & Portfolio Sizing Deep Dive",
+                 fontsize=18, fontweight="bold", y=0.98)
+
+    colors_map = {"IWN": "#1565C0", "CRWD": "#C62828"}
+    default_colors = ["#1565C0", "#C62828", "#2E7D32", "#F57F17"]
+
+    # Panel 1: Strike ladder heatmap — put cost % by tenor and strike
+    ax = axes[0, 0]
+    tenors_labels = ["1mo", "3mo", "6mo", "9mo", "12mo"]
+    strike_labels = ["ATM", "5% OTM", "10% OTM", "15% OTM", "20% OTM"]
+
+    bar_width = 0.35
+    for idx, fd in enumerate(focus_data):
+        tk = fd["ticker"]
+        color = colors_map.get(tk, default_colors[idx])
+        # Show 3mo put cost across strikes
+        costs = [lr[f"put_3mo_pct"] * 100 for lr in fd["ladder"]]
+        x = np.arange(len(strike_labels))
+        offset = -bar_width / 2 + idx * bar_width
+        bars = ax.bar(x + offset, costs, bar_width * 0.9, label=tk, color=color, alpha=0.8)
+        for bar, cost in zip(bars, costs):
+            ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.1,
+                    f"{cost:.1f}%", ha="center", va="bottom", fontsize=10)
+
+    ax.set_xticks(np.arange(len(strike_labels)))
+    ax.set_xticklabels(strike_labels, fontsize=12)
+    ax.set_ylabel("3-Month Put Cost (% of Spot)", fontsize=13)
+    ax.set_title("Put Cost by Strike", fontsize=15)
+    ax.legend(fontsize=12)
+    ax.tick_params(axis="y", labelsize=11)
+    ax.grid(True, alpha=0.3, axis="y")
+
+    # Panel 2: Put cost across tenors (ATM only)
+    ax = axes[0, 1]
+    for idx, fd in enumerate(focus_data):
+        tk = fd["ticker"]
+        color = colors_map.get(tk, default_colors[idx])
+        atm_row = fd["ladder"][0]  # ATM
+        costs = [atm_row[f"put_{t}_pct"] * 100 for t in tenors_labels]
+        ax.plot(tenors_labels, costs, marker="o", markersize=10, linewidth=2.5,
+                label=f"{tk} (\\${fd['spot']:,.0f})", color=color)
+        for i, c in enumerate(costs):
+            ax.annotate(f"{c:.1f}%", (tenors_labels[i], c),
+                        textcoords="offset points", xytext=(0, 10),
+                        fontsize=10, ha="center", color=color, fontweight="bold")
+
+    ax.set_ylabel("ATM Put Cost (% of Spot)", fontsize=13)
+    ax.set_xlabel("Tenor", fontsize=13)
+    ax.set_title("ATM Put Term Structure", fontsize=15)
+    ax.legend(fontsize=12)
+    ax.tick_params(axis="both", labelsize=11)
+    ax.grid(True, alpha=0.3)
+
+    # Panel 3: Portfolio sizing — hedge cost vs allocation
+    ax = axes[1, 0]
+    for idx, fd in enumerate(focus_data):
+        tk = fd["ticker"]
+        color = colors_map.get(tk, default_colors[idx])
+        allocs = [s["alloc_pct"] * 100 for s in fd["sizing"]]
+        hedges = [s["hedge_port_pct"] * 100 for s in fd["sizing"]]
+        ax.plot(allocs, hedges, marker="s", markersize=8, linewidth=2.5,
+                label=f"{tk} (vol={fd['vol']:.0%})", color=color)
+        # Mark recommended allocation
+        rec_x = fd["rec_alloc"] * 100
+        rec_y = fd["rec_hedge"] / PORTFOLIO_VALUE * 100
+        ax.scatter([rec_x], [rec_y], s=200, color=color, edgecolors="black",
+                   linewidths=2, zorder=10, marker="*")
+        ax.annotate(f"Rec: {rec_x:.0f}%", (rec_x, rec_y),
+                    textcoords="offset points", xytext=(8, 8),
+                    fontsize=11, fontweight="bold", color=color)
+
+    ax.set_xlabel("Portfolio Allocation (%)", fontsize=13)
+    ax.set_ylabel("Hedge Cost (% of Portfolio)", fontsize=13)
+    ax.set_title("Allocation vs Hedge Cost (3M ATM Put)", fontsize=15)
+    ax.legend(fontsize=12)
+    ax.tick_params(axis="both", labelsize=11)
+    ax.grid(True, alpha=0.3)
+
+    # Panel 4: Normalized price vs BTC
+    ax = axes[1, 1]
+    btc_norm = (btc_prices / btc_prices.iloc[0]) * 100
+    ax.plot(btc_norm.index, btc_norm.values, color="orange", linewidth=2.5,
+            label=f"BTC (\\${btc_spot:,.0f})", zorder=10)
+    for idx, fd in enumerate(focus_data):
+        tk = fd["ticker"]
+        color = colors_map.get(tk, default_colors[idx])
+        ps = fd["price_series"]
+        if ps is not None and len(ps) > 10:
+            common_start = max(ps.index[0], btc_prices.index[0])
+            ps_a = ps[ps.index >= common_start]
+            norm = (ps_a / ps_a.iloc[0]) * 100
+            ax.plot(norm.index, norm.values, linewidth=2, color=color, alpha=0.85,
+                    label=f"{tk} ({chr(961)}={fd['corr_3m']:+.2f})")
+
+    ax.set_ylabel("Normalized Price (Start=100)", fontsize=13)
+    ax.set_title("Price Performance vs BTC", fontsize=15)
+    ax.legend(fontsize=12)
+    ax.tick_params(axis="both", labelsize=11)
+    ax.grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    out_path = os.path.join(docs_dir, "btc_iwn_crwd_deep_dive.png")
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close()
+    print(f"\n  -> {out_path}")
 
 
 # ---------------------------------------------------------------------------
