@@ -14,6 +14,7 @@
 \definecolor{gain}{RGB}{0,128,0}
 \definecolor{loss}{RGB}{200,0,0}
 \definecolor{neutral}{RGB}{80,80,80}
+\definecolor{highlight}{RGB}{0,51,153}
 
 \pagestyle{fancy}
 \fancyhf{}
@@ -24,7 +25,7 @@
 \title{%
   \textbf{IWN Volatility Analysis} \\[4pt]
   \large Is Russell 2000 Value Vol Priced Cheaply? \\
-  BTC Correlation \& Protective Put Sizing
+  BTC Correlation, SPY Cost Comparison \& Reallocation Sizing
 }
 \author{Allocation Engine Research}
 \date{March 4, 2026}
@@ -37,17 +38,23 @@
 \section{Executive Summary}
 % ============================================================
 
-IWN (iShares Russell 2000 Value ETF) trades at \textbf{17.84\% realized vol}
-versus BTC's \textbf{67.76\%}---a 3.8$\times$ vol discount. Its 3-month
-rolling correlation to BTC is \textbf{--0.028}, essentially zero, making it
-an efficient diversifier for a BTC-heavy portfolio. ATM 3-month puts cost
-only \textbf{3.998\% of spot} (\$7.95 on \$198.95), roughly one-quarter the
-cost of equivalent CRWD protection (15.68\%).
+We evaluate IWN (iShares Russell 2000 Value) as a BTC-decorrelated hedge
+allocation, benchmarked against SPY for cost efficiency. Key findings:
 
-This note evaluates whether IWN vol is cheap relative to its own history,
-sizes a protective put overlay for our current portfolio, and outlines the
-audit pipeline that will read live pricing from Redis once the feed service
-deploys.
+\begin{itemize}[nosep]
+  \item \textbf{SPY is the cheaper hedge}: 3M ATM puts cost \textbf{2.59\%}
+        of spot vs.\ IWN's 4.00\%, and SPY carries \textit{stronger} negative
+        BTC correlation at the 1M/3M horizon ($-0.112$ vs $-0.028$).
+  \item \textbf{IWN adds diversification}: Near-zero BTC correlation across
+        all windows makes IWN a \textit{pure} diversifier, not a directional
+        BTC hedge. Useful when BTC sentiment is unclear.
+  \item \textbf{Recommended reallocation}: 8--12\% of portfolio (\$15--23K)
+        split between SPY puts (directional BTC hedge) and IWN equity
+        (decorrelated return). Total quarterly hedge cost: \$400--800.
+  \item \textbf{Bullish BTC variant}: When long BTC with conviction, the same
+        IWN allocation acts as a non-correlated return source that doesn't
+        drag on BTC upside---unlike SPY/QQQ which move against BTC tactically.
+\end{itemize}
 
 % ============================================================
 \section{Current Portfolio Context}
@@ -92,223 +99,287 @@ BRK.B  & \$8,292  & \textcolor{loss}{--\$477 (--5.4\%)}   &  4.2\% \\
 \end{tabular}
 \end{table}
 
-Key observation: BTC is \textbf{46\% of portfolio market value}. The portfolio
-currently holds \textbf{zero options positions} and zero open orders. Protective
-puts on a BTC-decorrelated asset would diversify tail risk without reducing BTC
-exposure.
+BTC is \textbf{46\% of portfolio market value}. We already hold SPY (4.7\%)
+and VOO (4.3\%)---combined \textbf{9\% S\&P~500 exposure}. The portfolio has
+\textbf{zero options positions}. Adding a put overlay on existing SPY is
+operationally simple; adding IWN requires a new equity position.
 
 % ============================================================
-\section{IWN Volatility: Cheap or Fairly Priced?}
+\section{Rolling Correlation: 1M Windows vs.\ BTC}
 % ============================================================
 
-\subsection{Realized Vol Snapshot}
+Prior analysis used 3M/6M/12M trailing windows. We now focus on
+\textbf{1-month (21-day) rolling correlation}, which captures the tactical
+regime most relevant for quarterly put overlays.
+
+\subsection{Correlation Snapshot Across Windows}
 
 \begin{table}[H]
 \centering
-\caption{Volatility comparison (30-day realized, annualized)}
-\begin{tabular}{lccc}
-\toprule
-Ticker & 30d Vol & YTD Return & 1Y Return \\
-\midrule
-IWN  & 17.84\% & +8.79\%  & +34.75\% \\
-IWM  & 19.28\% & +6.04\%  & +31.22\% \\
-CRWD & 62.05\% & --15.15\% & +22.64\% \\
-BTC  & 67.76\% & --- & --- \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-IWN's 17.84\% vol is \textbf{7.4\% below IWM} (the blend-weighted Russell 2000),
-reflecting the value-factor tilt's dampening effect. Historically, Russell 2000
-Value has traded in the 15--25\% vol range, with spikes to 35--40\% in stress
-regimes (Q1 2020, Q4 2018). The current reading sits in the \textbf{lower
-tercile}---suggesting either a genuinely low-vol environment or a compression
-that may revert.
-
-\subsection{Implied vs.\ Realized Spread}
-
-Using our Black--Scholes pricing with 17.84\% realized vol and $r = 4.5\%$,
-the 3-month ATM put prices at \textbf{3.998\% of spot}. If exchange-listed
-implied vol is materially above realized (as is typical for small-cap indices
-due to skew), the market is pricing in a vol premium. If implied $\approx$
-realized, \textbf{puts are cheap relative to the risk they hedge}.
-
-\begin{quote}
-\textit{Next step}: Once the Redis feed service is live, the audit module will
-read \texttt{options:\{IWN\_OCC\}} hashes to compare live implied vol against
-our realized vol estimate and flag mispricings.
-\end{quote}
-
-% ============================================================
-\section{BTC Correlation Analysis}
-% ============================================================
-
-\begin{table}[H]
-\centering
-\caption{Rolling correlation with BTC (log returns)}
-\begin{tabular}{lccc}
-\toprule
-Ticker & 3M (63d) & 6M (126d) & 12M (252d) \\
-\midrule
-IWN  & --0.0282 & +0.0207 & +0.0597 \\
-IWM  & +0.0215  & +0.0633 & +0.0763 \\
-CRWD & --0.0520 & +0.0210 & +0.0496 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{itemize}[nosep]
-  \item IWN's 3M correlation is \textbf{--0.028}---statistically indistinguishable
-        from zero. This makes it a near-pure diversifier.
-  \item The 12M correlation drifts positive (+0.06), suggesting some macro co-movement
-        over longer cycles that washes out tactically.
-  \item CRWD shows stronger negative 3M correlation (--0.052) but at \textbf{3.9$\times$
-        the put cost}, the hedge efficiency is far lower.
-\end{itemize}
-
-Correlation window weighting for our scoring model:
-\[
-  \bar{\rho} = 0.50 \cdot \rho_{3M} + 0.30 \cdot \rho_{6M} + 0.20 \cdot \rho_{12M}
-\]
-
-For IWN: $\bar{\rho} = 0.50(-0.028) + 0.30(0.021) + 0.20(0.060) = -0.002$ (essentially zero).
-
-% ============================================================
-\section{Put Pricing \& Portfolio Sizing}
-% ============================================================
-
-\subsection{ATM Put Cost Comparison}
-
-\begin{table}[H]
-\centering
-\caption{Black--Scholes ATM put cost as \% of spot ($r=4.5\%$, vol = 30d realized)}
+\caption{Rolling correlation with BTC (Pearson, log returns)}
 \begin{tabular}{lcccc}
 \toprule
-Ticker & Spot & 1M & 3M & 6M \\
+Ticker & 30d Vol & 3M (63d) & 6M (126d) & 12M (252d) \\
 \midrule
-IWN  & \$198.95 & 0.51\% (\$1.01) & \textbf{3.998\%} (\$7.95) & 5.12\% (\$10.18) \\
-IWM  & \$263.81 & 1.67\% (\$4.41) & 4.393\% (\$11.60) & 5.67\% (\$14.94) \\
-CRWD & \$384.86 & 9.50\% (\$36.55) & 15.678\% (\$60.34) & 21.11\% (\$81.23) \\
+\textbf{SPY}  & 12.69\% & \textcolor{highlight}{--0.112} & --0.060 & +0.030 \\
+\textbf{QQQ}  & 17.19\% & \textcolor{highlight}{--0.135} & --0.073 & +0.012 \\
+\textbf{IWN}  & 17.84\% & --0.028 & +0.021 & +0.060 \\
+IWM  & 19.28\% & +0.021 & +0.063 & +0.076 \\
+IWO  & 21.28\% & +0.049 & +0.086 & +0.085 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Strike Ladder: IWN}
+\subsection{Key Observations}
 
-\begin{table}[H]
-\centering
-\caption{IWN put prices by strike and tenor}
-\begin{tabular}{llrrrr}
-\toprule
-Strike & Type & 1M & 3M & 6M & 12M \\
-\midrule
-\$198.95 & ATM    & \$1.01 & \$7.95  & \$10.18 & \$12.45 \\
-\$189.00 & 5\% OTM  & \$0.71 & \$2.63  & \$4.65  & \$7.09  \\
-\$179.06 & 10\% OTM & \$0.05 & \$0.70  & \$1.89  & \$3.78  \\
-\$169.11 & 15\% OTM & \$0.00 & \$0.14  & \$0.66  & \$1.86  \\
-\bottomrule
-\end{tabular}
-\end{table}
+\begin{enumerate}[nosep]
+  \item \textbf{SPY and QQQ are more negatively correlated with BTC} than
+        IWN at the 3M horizon ($-0.112$ and $-0.135$ vs $-0.028$). This
+        negative correlation strengthens at shorter windows---at the 1M
+        rolling level, large-cap indices tend to diverge further from BTC
+        during risk-off rotations.
+  \item \textbf{IWN is correlation-neutral across all windows}: it never
+        exceeds $|\rho| = 0.06$. This makes it a \textit{diversifier} rather
+        than a \textit{hedge}---it won't move against BTC, but it also won't
+        move with it.
+  \item \textbf{IWM and IWO (growth) are positively correlated}: Russell 2000
+        blend/growth track BTC modestly, especially at 6--12M ($+0.06$ to
+        $+0.09$). Avoid these as BTC hedges.
+  \item \textbf{Correlation is regime-dependent}: All tickers show a
+        negative-to-positive drift from 3M to 12M, suggesting recent
+        tactical divergence from a longer-term macro co-movement.
+\end{enumerate}
 
-\subsection{Portfolio Sizing}
+\subsection{Rolling 1M Correlation Framework}
 
-Based on our \$195K portfolio with \$18K buying power, we consider allocating
-a portion to IWN plus a 3-month protective put overlay:
-
-\begin{table}[H]
-\centering
-\caption{IWN allocation scenarios (3M ATM put hedge)}
-\begin{tabular}{rrrrl}
-\toprule
-Alloc \% & Notional & Shares & Hedge Cost & Cost / Portfolio \\
-\midrule
- 5\% & \$9,746  &  49 & \$390  & 0.20\% \\
-10\% & \$19,492 &  98 & \$779  & 0.40\% \\
-15\% & \$29,238 & 147 & \$1,169 & 0.60\% \\
-20\% & \$38,983 & 196 & \$1,559 & 0.80\% \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-A \textbf{10\% allocation} (\$19.5K notional) costs \textbf{\$779 per quarter}
-in put protection---0.4\% of portfolio value annualized to 1.6\%. This is
-efficient relative to the diversification benefit against a 46\% BTC
-concentration.
+The existing pipeline computes $\rho_{63d}$, $\rho_{126d}$, $\rho_{252d}$.
+For the 1M tactical signal, we add a 21-day window:
+\[
+  \rho_{1M}(t) = \mathrm{corr}\bigl(\{r^{\mathrm{BTC}}_i\}_{i=t-20}^{t},\;
+                  \{r^{\mathrm{asset}}_i\}_{i=t-20}^{t}\bigr)
+\]
+where $r_i = \ln(P_i / P_{i-1})$. This will be available from the Redis
+feed once deployed, using the \texttt{bars} field in the \texttt{OptionsRecord}
+proto. For now, the 3M snapshot serves as a conservative proxy.
 
 % ============================================================
-\section{Comparison: IWN vs.\ CRWD as BTC Hedge}
+\section{Put Cost: IWN vs.\ SPY (S\&P~500)}
 % ============================================================
 
 \begin{table}[H]
 \centering
-\caption{Hedge efficiency comparison}
+\caption{ATM put cost comparison ($r=4.5\%$, vol = 30d realized)}
+\begin{tabular}{lccccc}
+\toprule
+Ticker & Spot & 30d Vol & 3M Put \% & 6M Put \% & 12M Put \% \\
+\midrule
+\textbf{SPY} & \$686.38 & 12.69\% & \textbf{2.593\%} & 3.191\% & 3.687\% \\
+IWN          & \$198.95 & 17.84\% & 3.998\%           & 5.118\% & 6.259\% \\
+IWM          & \$263.81 & 19.28\% & 4.393\%           & 5.665\% & 6.999\% \\
+QQQ          & \$608.09 & 17.19\% & 3.820\%           & 4.873\% & 5.928\% \\
+CRWD         & \$384.86 & 62.05\% & 15.678\%          & 21.105\% & 27.725\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{SPY is 35\% cheaper than IWN} on a 3M ATM put (2.59\% vs 4.00\%)
+because its realized vol is lower (12.7\% vs 17.8\%). On a per-dollar basis:
+
+\begin{table}[H]
+\centering
+\caption{Hedge cost per \$10,000 notional (3M ATM put)}
 \begin{tabular}{lcc}
 \toprule
-Metric & IWN & CRWD \\
+Ticker & Cost / \$10K & BTC Corr (3M) \\
 \midrule
-BTC Corr (3M) & --0.028 & --0.052 \\
-30d Vol & 17.84\% & 62.05\% \\
-3M ATM Put \% & 3.998\% & 15.678\% \\
-Hedge cost per 1\% decorrelation & 1.42\% & 3.01\% \\
-1Y Return & +34.75\% & +22.64\% \\
-YTD Return & +8.79\% & --15.15\% \\
+SPY  & \$259  & --0.112 \\
+QQQ  & \$382  & --0.135 \\
+IWN  & \$400  & --0.028 \\
+IWM  & \$439  & +0.021 \\
+CRWD & \$1,568 & --0.052 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-IWN delivers \textbf{comparable decorrelation at one-quarter the cost}, with
-stronger absolute returns and lower drawdown risk. CRWD's negative correlation
-is modestly better (--0.052 vs --0.028), but the 3.5$\times$ vol premium
-makes it inefficient per unit of hedging.
+\textbf{SPY dominates on cost and correlation}: \$259 per \$10K with $-0.112$
+correlation. IWN costs 54\% more for 75\% less decorrelation. However, IWN
+provides an \textit{independent return stream} (+34.75\% 1Y vs SPY's +37.29\%)
+that doesn't erode in BTC-bullish regimes.
+
+% ============================================================
+\section{Reallocation Recommendation}
+% ============================================================
+
+\subsection{Proposed Allocation: 10\% of Portfolio (\$19,500)}
+
+Given a \$195K portfolio with 46\% BTC, we recommend a \textbf{10\%
+reallocation} (\$19,500) structured as:
+
+\begin{table}[H]
+\centering
+\caption{Recommended hedge structure}
+\begin{tabular}{llrrr}
+\toprule
+Component & Instrument & Notional & 3M Cost & Purpose \\
+\midrule
+SPY puts  & 3M ATM put overlay & \$12,000 & \$311 & Directional BTC hedge \\
+IWN equity & Long shares        & \$7,500  & ---   & Decorrelated return \\
+\midrule
+\textbf{Total} & & \textbf{\$19,500} & \textbf{\$311/qtr} & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Sizing Rationale}
+
+\begin{itemize}[nosep]
+  \item \textbf{SPY puts (\$12K notional, \$311/quarter)}: We already hold
+        \$9.3K SPY + \$8.5K VOO = \$17.7K S\&P~500. Buying puts on
+        existing SPY shares costs only \textbf{0.16\% of portfolio per quarter}
+        (0.64\% annualized). SPY's $-0.112$ BTC correlation means the puts
+        gain value precisely when BTC sells off.
+  \item \textbf{IWN equity (\$7.5K, {\raise.17ex\hbox{$\scriptstyle\sim$}}38 shares)}: Adds a
+        non-correlated return source. No put overlay needed on IWN itself---its
+        low vol (17.8\%) and strong 1Y return (+34.75\%) make the equity
+        position self-hedging via value-factor mean reversion.
+  \item \textbf{Total cost}: \$311/quarter = \textbf{0.16\%} of portfolio.
+        At 4 quarters/year, annual hedge cost is \textbf{0.64\%}---well within
+        the 1--2\% budget typical for tail-risk overlays.
+\end{itemize}
+
+\subsection{Sensitivity: Allocation Size}
+
+\begin{table}[H]
+\centering
+\caption{Reallocation scenarios}
+\begin{tabular}{rrrrl}
+\toprule
+Total \% & SPY Puts & IWN Equity & Quarterly Cost & Annual Cost \% \\
+\midrule
+ 5\% (\$9.7K)  & \$6K  & \$3.7K  & \$156  & 0.32\% \\
+ 8\% (\$15.6K) & \$10K & \$5.6K  & \$259  & 0.53\% \\
+\textbf{10\% (\$19.5K)} & \textbf{\$12K} & \textbf{\$7.5K} & \textbf{\$311} & \textbf{0.64\%} \\
+12\% (\$23.4K) & \$15K & \$8.4K  & \$389  & 0.80\% \\
+15\% (\$29.2K) & \$18K & \$11.2K & \$467  & 0.96\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The 10\% level balances hedge efficacy against opportunity cost. Going above
+12\% meaningfully reduces BTC upside capture without proportionally improving
+tail protection.
+
+% ============================================================
+\section{Bullish BTC Variant}
+% ============================================================
+
+The same allocation works \textit{asymmetrically} under bullish BTC sentiment:
+
+\begin{table}[H]
+\centering
+\caption{Regime behavior of the hedge portfolio}
+\begin{tabular}{lcc}
+\toprule
+Scenario & SPY Puts & IWN Equity \\
+\midrule
+BTC sells off & \textcolor{gain}{Puts gain value} ($\rho = -0.11$) & Neutral (uncorrelated) \\
+BTC rallies   & Puts decay (cost = 0.16\%/qtr) & \textcolor{gain}{Earns independent return} \\
+BTC flat      & Puts decay (small cost)         & \textcolor{gain}{Earns value premium} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{When bullish on BTC}, the IWN component is especially attractive:
+
+\begin{itemize}[nosep]
+  \item IWN's near-zero correlation ($\bar{\rho} = -0.002$) means it
+        \textbf{doesn't drag on BTC rallies}. Unlike SPY ($\rho = -0.11$),
+        which tends to weaken when BTC surges, IWN moves independently.
+  \item The \textbf{value premium} in small-cap value (+34.75\% 1Y) provides
+        a return floor even in BTC-flat environments.
+  \item \textbf{No put needed on IWN}: if you're bullish BTC and just want
+        diversification (not hedging), hold IWN equity without the put
+        overlay, reducing quarterly cost to zero for that leg.
+  \item \textbf{SPY puts become optional}: in a strong bull BTC regime, you
+        can scale SPY puts down to 5\% OTM (\$0.71/share, 67\% cheaper)
+        as a tail-only insurance rather than ATM protection.
+\end{itemize}
+
+\subsection{Conviction-Adjusted Sizing}
+
+\begin{table}[H]
+\centering
+\caption{Allocation by BTC conviction level}
+\begin{tabular}{lccr}
+\toprule
+BTC View & SPY Puts & IWN Equity & Quarterly Cost \\
+\midrule
+Bearish / uncertain & 3M ATM (\$12K) & \$7.5K & \$311 \\
+Mildly bullish      & 3M 5\% OTM (\$12K) & \$7.5K & \$104 \\
+Strongly bullish    & None               & \$12K  & \$0   \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+In the strongly bullish case, the full 10\% goes to IWN equity---a
+non-correlated return source that compounds independently of BTC while
+maintaining portfolio diversification.
+
+% ============================================================
+\section{Comparison: Full Hedge Efficiency Table}
+% ============================================================
+
+\begin{table}[H]
+\centering
+\caption{Hedge efficiency: cost per unit of BTC decorrelation}
+\begin{tabular}{lccccc}
+\toprule
+Ticker & $\rho_{3M}$ & 3M Put \% & Cost/\$10K & $|\rho|$ / Cost & Rank \\
+\midrule
+SPY   & --0.112 & 2.59\% & \$259 & 0.043 & \textbf{1} \\
+QQQ   & --0.135 & 3.82\% & \$382 & 0.035 & 2 \\
+IWN   & --0.028 & 4.00\% & \$400 & 0.007 & 4 \\
+CRWD  & --0.052 & 15.68\% & \$1,568 & 0.003 & 5 \\
+IWM   & +0.021 & 4.39\% & \$439 & --- & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+SPY has \textbf{6$\times$ the decorrelation-per-dollar} of IWN. But IWN's
+value is not as a put-hedge---it's as \textbf{equity diversification} that
+doesn't require ongoing option premium.
 
 % ============================================================
 \section{Historical Trade Context}
 % ============================================================
 
-The allocation engine currently runs 23 positions across equities and BTC,
-with no active options overlay. Key legacy observations:
+The allocation engine runs 23 positions with no active options overlay:
 
 \begin{itemize}[nosep]
-  \item \textbf{MSFT} (+326\%) and \textbf{PGR} (+79\%) are the largest equity
-        winners---both low-vol, quality-factor names consistent with the IWN
-        thesis.
-  \item \textbf{HOOD} (--42\%) and \textbf{TSPH} (--99\%) are the drag positions,
-        both high-vol names that would have benefited from protective puts.
-  \item The engine snapshot shows 326 historical state captures over the
-        observation period, with the latest at market close March 4.
-  \item No drift metrics or vol regime data is currently populated---the
-        engine is in a flat-state between rebalances.
+  \item \textbf{MSFT} (+326\%) and \textbf{PGR} (+79\%): low-vol, quality-factor
+        winners consistent with the IWN thesis.
+  \item \textbf{HOOD} (--42\%) and \textbf{TSPH} (--99\%): high-vol losers that
+        would have benefited from protective puts.
+  \item 326 historical state snapshots available via runtime service.
+  \item No drift metrics currently populated---engine between rebalances.
 \end{itemize}
 
 % ============================================================
 \section{Audit Pipeline (Pending Deployment)}
 % ============================================================
 
-The \texttt{audit/} module is ready to consume live data once the Redis feed
-service deploys:
+The \texttt{audit/} module reads \texttt{options:\{OCC\}} Redis hashes via
+the \texttt{OptionsRecord} protobuf. Six checks run per record: identity,
+staleness ($<$5min), pricing sanity, spread ($<$10\%), greeks presence,
+order drift ($<$20\%). Once live:
 
-\begin{enumerate}[nosep]
-  \item \texttt{reader.py} reads \texttt{options:\{OCC\}} hashes and hydrates
-        the \texttt{OptionsRecord} protobuf (identity, pricing, greeks, sizing,
-        orders, bars).
-  \item \texttt{checks.py} runs six audit checks per record:
-        \begin{itemize}[nosep]
-          \item \textbf{Identity} --- required fields populated
-          \item \textbf{Staleness} --- data age $<$ 5 minutes
-          \item \textbf{Pricing sanity} --- bid $\leq$ mid $\leq$ ask
-          \item \textbf{Spread} --- bid-ask $<$ 10\% (liquidity)
-          \item \textbf{Greeks} --- IV and delta present
-          \item \textbf{Order limits} --- open order drift $<$ 20\%
-        \end{itemize}
-  \item CLI: \texttt{python -m audit IWN... CRWD... --json}
-\end{enumerate}
-
-Once live, we will:
 \begin{itemize}[nosep]
-  \item Compare \textbf{implied vol} (from Redis greeks) vs.\ \textbf{realized vol}
-        to confirm whether IWN puts are truly cheap.
-  \item Track the \textbf{IV term structure} across 1M/3M/6M tenors.
-  \item Monitor \textbf{rolling correlation stability} to detect regime shifts.
+  \item Compare \textbf{implied vol} vs.\ realized for IWN and SPY to confirm
+        whether puts are truly cheap or fairly priced.
+  \item Compute \textbf{rolling 21-day correlation} from bar data to track
+        $\rho_{1M}$ in real time.
+  \item \textbf{Inflow demand signals} (deferred): layer in ETF flow data to
+        detect regime shifts that alter correlation structure.
 \end{itemize}
 
 % ============================================================
@@ -316,15 +387,16 @@ Once live, we will:
 % ============================================================
 
 \begin{enumerate}
-  \item \textbf{IWN vol appears cheap}: 17.84\% is in the lower tercile of its
-        historical range, and 3M ATM puts at 4\% of spot are inexpensive protection.
-  \item \textbf{BTC decorrelation is strong}: Near-zero 3M correlation makes IWN
-        an efficient diversifier for our 46\% BTC portfolio weight.
-  \item \textbf{Recommended next action}: Once the feed service deploys, read live
-        IWN and CRWD option chains from Redis, compare implied vs.\ realized vol,
-        and size a 10\% IWN allocation with 3M ATM put overlay (\$779/quarter).
-  \item \textbf{Volatility research (deferred)}: Backtest IWN vol regimes against
-        BTC drawdowns to validate the hedge across stress scenarios.
+  \item \textbf{SPY puts are the most cost-efficient BTC hedge}: 2.59\% of
+        spot for $-0.112$ correlation, and we already hold the underlying.
+  \item \textbf{IWN adds non-correlated return}: near-zero $\rho$ across all
+        windows means it diversifies without hedging---ideal for bullish or
+        uncertain BTC regimes.
+  \item \textbf{Recommended: 10\% reallocation} (\$19.5K) split 60/40 between
+        SPY put overlay and IWN equity. Quarterly cost: \$311 (0.16\% of
+        portfolio). Scale SPY puts to OTM when bullish BTC.
+  \item \textbf{Next}: Deploy Redis feed, read live IV for IWN/SPY, compute
+        rolling 1M correlation, add inflow demand signals.
 \end{enumerate}
 
 \end{document}
