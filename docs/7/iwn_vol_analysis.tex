@@ -85,36 +85,78 @@ This is the \textbf{correct} Pearson correlation on log returns.
 
 \begin{table}[H]
 \centering
-\caption{Return correlation with equities: Grayscale BTC vs.\ Spot BTC/USD}
-\begin{tabular}{lcccc}
+\caption{Grayscale BTC Mini-Trust: rolling return correlation with major ETFs}
+\begin{tabular}{lccccccc}
 \toprule
- & \multicolumn{2}{c}{\textbf{Grayscale BTC} (\$32)} & \multicolumn{2}{c}{\textbf{Spot BTC/USD} (\$72K)} \\
-\cmidrule(lr){2-3}\cmidrule(lr){4-5}
-Ticker & 20d & 30d & 20d & 30d \\
+Ticker & 5d & 10d & 15d & 20d & 25d & 30d & 35d \\
 \midrule
-SPY & \textcolor{loss}{+0.758} & \textcolor{loss}{+0.651} & --0.115 & --0.180 \\
-QQQ & \textcolor{loss}{+0.752} & \textcolor{loss}{+0.639} & --0.076 & --0.121 \\
-IWM & \textcolor{loss}{+0.771} & \textcolor{loss}{+0.606} & --0.350 & --0.355 \\
-GLD & +0.422 & +0.271 & --0.219 & +0.051 \\
-DIA & \textcolor{loss}{+0.712} & +0.474 & --0.167 & --0.272 \\
-EFA & +0.473 & +0.351 & --0.222 & --0.078 \\
-\midrule
-\textit{Spot BTC/USD} & \textit{+0.109} & \textit{+0.097} & --- & --- \\
+SPY & \textcolor{loss}{+0.901} & \textcolor{loss}{+0.757} & \textcolor{loss}{+0.722} & \textcolor{loss}{+0.758} & \textcolor{loss}{+0.685} & \textcolor{loss}{+0.651} & \textcolor{loss}{+0.631} \\
+QQQ & \textcolor{loss}{+0.886} & \textcolor{loss}{+0.745} & \textcolor{loss}{+0.706} & \textcolor{loss}{+0.752} & \textcolor{loss}{+0.679} & \textcolor{loss}{+0.639} & \textcolor{loss}{+0.619} \\
+IWM & \textcolor{loss}{+0.860} & \textcolor{loss}{+0.726} & \textcolor{loss}{+0.698} & \textcolor{loss}{+0.771} & \textcolor{loss}{+0.650} & \textcolor{loss}{+0.606} & +0.575 \\
+GLD & +0.498 & +0.359 & +0.339 & +0.422 & +0.289 & +0.271 & +0.210 \\
+DIA & \textcolor{loss}{+0.878} & \textcolor{loss}{+0.687} & \textcolor{loss}{+0.623} & \textcolor{loss}{+0.712} & +0.527 & +0.474 & +0.431 \\
+EFA & +0.584 & +0.469 & +0.408 & +0.473 & +0.365 & +0.351 & +0.296 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
+Correlations are \textbf{persistently high across all windows}: SPY ranges from
+$+0.63$ (35d) to $+0.90$ (5d). GLD is the least correlated but still positive.
+
 \textbf{The Grayscale trust is a de facto equity position}: $+0.76$ corr with
-SPY, $+0.77$ with IWM, and \textit{only} $+0.10$ with the Bitcoin it claims
-to track. The trust's NAV discount/premium dynamics, share creation mechanics,
-and equity market microstructure dominate its return distribution.
+SPY, $+0.77$ with IWM across all windows. The trust's NAV discount/premium
+dynamics, share creation mechanics, and equity market microstructure dominate
+its return distribution.
+
+\subsection{Grayscale BTC Volatility \& Put Pricing}
+
+Grayscale BTC realized volatility is substantially higher than equity indices,
+which makes protective puts expensive:
+
+\begin{table}[H]
+\centering
+\caption{Annualized 30-day realized volatility comparison}
+\begin{tabular}{lcc}
+\toprule
+Instrument & Spot Price & 30d Vol \\
+\midrule
+\textbf{Grayscale BTC} & \textbf{\$32.35} & \textbf{73.7\%} \\
+GLD  & \$262.80 & 50.8\% \\
+IWM  & \$263.81 & 20.2\% \\
+QQQ  & \$608.09 & 17.2\% \\
+IWN  & \$198.95 & 17.8\% \\
+SPY  & \$686.38 & 11.9\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+At 73.7\% realized vol, Grayscale BTC is ${\raise.17ex\hbox{$\scriptstyle\sim$}}$6$\times$
+more volatile than SPY and ${\raise.17ex\hbox{$\scriptstyle\sim$}}$3.6$\times$
+more volatile than IWM. This directly impacts put pricing:
+
+\begin{table}[H]
+\centering
+\caption{Grayscale BTC put pricing (\$32.35 spot, $r=4.5\%$, $\sigma=73.7\%$)}
+\begin{tabular}{lcccc}
+\toprule
+Strike & 1M & 3M & 6M & 12M \\
+\midrule
+ATM (\$32.35) & \$2.67 (8.3\%) & \$4.52 (14.0\%) & \$6.22 (19.2\%) & \$8.40 (26.0\%) \\
+5\% OTM (\$30.73) & \$2.11 (6.5\%) & \$3.86 (11.9\%) & \$5.50 (17.0\%) & \$7.62 (23.6\%) \\
+10\% OTM (\$29.12) & \$1.64 (5.1\%) & \$3.27 (10.1\%) & \$4.84 (15.0\%) & \$6.91 (21.4\%) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A 3M ATM put on Grayscale BTC costs \textbf{14.0\% of spot} vs.\ 2.6\% for SPY---a
+5.4$\times$ cost multiple. For the portfolio's 2,763 shares, a 3M ATM put overlay
+would cost approximately $2{,}763 \times \$4.52 = \$\mathbf{12{,}489}$ per quarter,
+which is \textbf{12.5\% of the position's market value annualized}. This cost is
+prohibitive for ongoing protection.
 
 \subsection{Implication for Hedging}
 
-Our prior analysis (Section~\ref{sec:spot}) used \textit{spot BTC/USD}
-correlations, which showed SPY as negatively correlated ($-0.112$ at 63d).
-That analysis is correct for \textbf{spot Bitcoin}---but \textbf{wrong for
-our actual portfolio holding}. Since Grayscale BTC moves with equities:
+Since Grayscale BTC moves with equities:
 
 \begin{itemize}[nosep]
   \item \textbf{SPY puts do not hedge Grayscale BTC}---they move in the same
@@ -174,54 +216,29 @@ ${\raise.17ex\hbox{$\scriptstyle\sim$}}$80\%}---far higher than the apparent
 46\% ``BTC'' weighting suggests.
 
 % ============================================================
-\section{Spot BTC/USD Correlation (Reference)}
-\label{sec:spot}
-% ============================================================
-
-For completeness, the \textit{spot BTC/USD} correlations from our 2-year
-lookback analysis (which remain correct for actual Bitcoin exposure):
-
-\begin{table}[H]
-\centering
-\caption{Rolling correlation with \textit{spot} BTC/USD (Pearson, log returns)}
-\begin{tabular}{lcccc}
-\toprule
-Ticker & 30d Vol & 3M (63d) & 6M (126d) & 12M (252d) \\
-\midrule
-SPY  & 12.69\% & --0.112 & --0.060 & +0.030 \\
-QQQ  & 17.19\% & --0.135 & --0.073 & +0.012 \\
-IWN  & 17.84\% & --0.028 & +0.021 & +0.060 \\
-IWM  & 19.28\% & +0.021 & +0.063 & +0.076 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-These are \textbf{only relevant if the portfolio converts to spot BTC}
-(via direct Bitcoin custody or a spot ETF like IBIT). If the portfolio
-continues to hold the Grayscale trust, the Table~1 correlations govern.
-
-% ============================================================
 \section{Put Cost Comparison}
 % ============================================================
 
 \begin{table}[H]
 \centering
-\caption{ATM put cost ($r=4.5\%$, vol = 30d realized)}
+\caption{ATM put cost comparison ($r=4.5\%$, vol = 30d realized)}
 \begin{tabular}{lccccc}
 \toprule
 Ticker & Spot & 30d Vol & 3M Put \% & 6M Put \% & 12M Put \% \\
 \midrule
-SPY & \$686.38 & 12.69\% & \textbf{2.593\%} & 3.191\% & 3.687\% \\
-IWN & \$198.95 & 17.84\% & 3.998\% & 5.118\% & 6.259\% \\
-QQQ & \$608.09 & 17.19\% & 3.820\% & 4.873\% & 5.928\% \\
-IWM & \$263.81 & 19.28\% & 4.393\% & 5.665\% & 6.999\% \\
+\textcolor{loss}{Grayscale BTC} & \$32.35 & \textcolor{loss}{73.7\%} & \textcolor{loss}{14.0\%} & \textcolor{loss}{19.2\%} & \textcolor{loss}{26.0\%} \\
+SPY & \$686.38 & 11.9\% & \textbf{2.6\%} & 3.2\% & 3.7\% \\
+IWN & \$198.95 & 17.8\% & 4.0\% & 5.1\% & 6.3\% \\
+QQQ & \$608.09 & 17.2\% & 3.8\% & 4.9\% & 5.9\% \\
+IWM & \$263.81 & 20.2\% & 4.4\% & 5.7\% & 7.0\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-SPY remains the cheapest put at 2.59\%, but \textbf{the cost comparison is
-now moot for hedging Grayscale BTC}: SPY puts would lose money in the same
-selloff that hits the trust.
+Grayscale BTC puts are \textbf{5.4$\times$ more expensive than SPY} at the 3M tenor.
+At 14\% of spot per quarter, direct protection is prohibitively costly. SPY puts are
+cheapest at 2.6\%, but \textbf{SPY puts do not hedge Grayscale BTC}---they move in
+the same direction ($\rho = +0.76$).
 
 % ============================================================
 \section{Revised Reallocation Recommendation}
@@ -381,17 +398,19 @@ the \texttt{OptionsRecord} protobuf. Once live:
 % ============================================================
 
 \begin{enumerate}
-  \item \textbf{The portfolio holds Grayscale BTC, not spot Bitcoin}: the trust
-        is $+0.76$ correlated with SPY and only $+0.10$ with spot BTC/USD.
-        The portfolio's effective equity beta is
+  \item \textbf{Grayscale BTC is an equity position}: the trust is $+0.63$
+        to $+0.90$ correlated with SPY across all windows (5d--35d). The
+        portfolio's effective equity beta is
         ${\raise.17ex\hbox{$\scriptstyle\sim$}}$80\%, not the apparent 46\%
         ``BTC'' weighting.
+  \item \textbf{Direct put protection is prohibitive}: Grayscale BTC's 73.7\%
+        vol means a 3M ATM put costs 14\% of spot (\$12.5K/qtr for the full
+        position), 5.4$\times$ more than SPY puts.
   \item \textbf{SPY puts do not hedge Grayscale BTC}: they move in the same
-        direction. The prior hedge recommendation is invalid for the current
-        holding.
+        direction ($\rho = +0.76$).
   \item \textbf{If bullish BTC, convert to spot}: a spot BTC ETF (IBIT, FBTC)
-        captures Bitcoin upside. Then SPY puts + IWN equity become valid hedges
-        (\$311/qtr for 10\% reallocation).
+        captures actual Bitcoin upside. Then SPY puts + IWN equity become
+        valid hedges (\$311/qtr for 10\% reallocation).
   \item \textbf{If keeping the trust}: trim redundant SPY/VOO exposure (\$8K)
         and add GLD (\$10K) for equity-concentration hedging. No options cost.
   \item \textbf{Dashboard correlations are correct}: the runtime service uses
