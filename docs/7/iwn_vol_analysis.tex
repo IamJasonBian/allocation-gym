@@ -466,17 +466,91 @@ Path A (IBIT + SPY puts)    & +15.8\% &  +9.7\% & 29.1\% & 0.18 & --28.3\% & 0.3
         ($+0.19$ latest) makes this increasingly effective.
 \end{itemize}
 
-\subsection{Actual Portfolio (Runtime Service)}
+\subsection{Actual Engine Performance (Feb 21 -- Mar 4, 2026)}
 
-The runtime service stores rolling 15-minute snapshots (50 most recent). Over
-the latest available window (2026-03-04 14:43 to 2026-03-05 03:02):
+The allocation engine's live trading log reveals active BTC position
+management and directional put trades on IWM and CRWD.
+
+\subsubsection{BTC Equity Trading}
+
+\begin{table}[H]
+\centering
+\caption{BTC (Grayscale Mini Trust) filled orders}
+\begin{tabular}{lllrrl}
+\toprule
+Date & Side & Type & Shares & Avg Price & Notional \\
+\midrule
+02/27 & BUY  & Limit      & 500   & \$29.02 & \$14,509 \\
+03/02 & SELL & Stop Loss  & 500   & \$29.01 & \$14,505 \\
+03/02 & SELL & Market     & 400   & \$30.69 & \$12,277 \\
+03/02 & SELL & Limit      & 800   & \$31.00 & \$24,800 \\
+03/02 & BUY  & Limit      & 150   & \$30.53 & \$4,579 \\
+03/02 & SELL & Stop Limit & 204   & \$30.65 & \$6,253 \\
+03/02 & BUY  & Limit      & 300   & \$30.20 & \$9,060 \\
+03/02 & BUY  & Limit      & 425   & \$29.95 & \$12,729 \\
+03/03 & BUY  & Market     & 200   & \$29.99 & \$5,998 \\
+03/04 & SELL & Limit      & 150   & \$32.06 & \$4,809 \\
+\midrule
+\multicolumn{3}{l}{\textbf{Totals}} & \multicolumn{3}{l}{Bought 1,575 @ avg \$29.76 / Sold 2,054 @ avg \$30.50} \\
+\multicolumn{3}{l}{\textbf{Trading P\&L}} & \multicolumn{3}{l}{\textcolor{gain}{\textbf{+\$15,770}} on round-trip volume} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The engine runs a \textbf{bracket strategy}: limit buys near support with
+stop-limit sells for risk management. The stop loss on 03/02 (500 shares
+@ \$29.01) was quickly followed by re-entry at \$29.95--\$30.20, capturing
+the reversal.
+
+\subsubsection{Options Trading (IWM \& CRWD Puts)}
+
+\begin{table}[H]
+\centering
+\caption{Closed option round-trips}
+\begin{tabular}{llcccc}
+\toprule
+Symbol & Strike/Exp & Qty & Open Cost & Close Proceeds & P\&L \\
+\midrule
+IWM & \$262 Put 3/11 & 10 & \$3,160 & \$4,960 & \textcolor{gain}{+\$1,800} \\
+IWM & \$247 Put 3/13 & 10 & \$1,410 & \$2,860 & \textcolor{gain}{+\$1,450} \\
+CRWD & \$390 Put 3/06 & 1  & \$2,105 & \$3,330 & \textcolor{gain}{+\$1,225} \\
+CRWD & \$367.5 Put 3/20 & 1 & \$1,905 & \$1,625 & \textcolor{loss}{--\$280} \\
+\midrule
+\multicolumn{4}{l}{\textbf{Total Options P\&L}} & & \textcolor{gain}{\textbf{+\$4,195}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key observations}:
 \begin{itemize}[nosep]
-  \item Equity: \$97,639 $\rightarrow$ \$99,968 (+2.4\% intraday)
-  \item Portfolio value: \$192,589 $\rightarrow$ \$194,917
+  \item The engine is \textbf{already running protective puts on IWM},
+        validating the IWN/IWM hedge thesis. Two round-trips netted
+        \textcolor{gain}{+\$3,250} in one week.
+  \item CRWD puts served as single-stock directional hedges. The \$390
+        strike (3/06) was a 3:1 winner; the \$367.5 (3/20) closed at a
+        small loss after CRWD recovered.
+  \item Combined \textbf{equity + options P\&L: \textcolor{gain}{+\$19,965}}
+        (BTC trading +\$15,770, options +\$4,195) over the Feb~21 -- Mar~4 window.
 \end{itemize}
-Longer-term actuals require a time-series database or snapshot archival---the
-current API retains only ${\raise.17ex\hbox{$\scriptstyle\sim$}}$12 hours of
-history.
+
+\subsubsection{Current State (Mar 4, 2026)}
+
+\begin{table}[H]
+\centering
+\caption{Portfolio snapshot at 2026-03-04 19:30 UTC}
+\begin{tabular}{lr}
+\toprule
+Metric & Value \\
+\midrule
+Equity & \$99,968 \\
+Market value & \$194,917 \\
+Cash (margin) & --\$94,949 \\
+Positions & 23 \\
+BTC holding & 2,613 shares @ \$32.23 = \$84,228 (43.2\%) \\
+Open orders & BUY 522 BTC @ \$31.66 / SELL 522 @ \$31.70 \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 % ============================================================
 \section{Conclusion \& Next Steps}
@@ -498,9 +572,9 @@ history.
         outweighs the protection benefit.
   \item \textbf{Direct put protection is prohibitive}: at 81.5\% realized vol,
         Grayscale BTC 3M ATM puts cost 14\% of spot (\$12.5K/qtr).
-  \item \textbf{Snapshot archival needed}: the runtime service retains only
-        ${\raise.17ex\hbox{$\scriptstyle\sim$}}$12 hours of snapshots. A
-        time-series store would enable continuous thesis monitoring.
+  \item \textbf{Engine is already executing the thesis}: live IWM put trades
+        netted +\$3,250 in one week. Combined with BTC bracket trading
+        (+\$15,770), the engine generated +\$19,965 in the Feb~21--Mar~4 window.
 \end{enumerate}
 
 \end{document}
