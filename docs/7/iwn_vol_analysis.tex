@@ -15,6 +15,7 @@
 \definecolor{loss}{RGB}{200,0,0}
 \definecolor{neutral}{RGB}{80,80,80}
 \definecolor{highlight}{RGB}{0,51,153}
+\definecolor{warn}{RGB}{180,100,0}
 
 \pagestyle{fancy}
 \fancyhf{}
@@ -24,8 +25,8 @@
 
 \title{%
   \textbf{IWN Volatility Analysis} \\[4pt]
-  \large Is Russell 2000 Value Vol Priced Cheaply? \\
-  BTC Correlation, SPY Cost Comparison \& Reallocation Sizing
+  \large Grayscale BTC Mini-Trust Correlation Discovery, \\
+  SPY Cost Comparison \& Reallocation Sizing
 }
 \author{Allocation Engine Research}
 \date{March 4, 2026}
@@ -38,22 +39,90 @@
 \section{Executive Summary}
 % ============================================================
 
-We evaluate IWN (iShares Russell 2000 Value) as a BTC-decorrelated hedge
-allocation, benchmarked against SPY for cost efficiency. Key findings:
+A review of the runtime service dashboard revealed a \textbf{critical
+instrument mismatch}: the portfolio holds \textbf{Grayscale BTC Mini Trust}
+(ticker BTC, \$32.35/share), not spot Bitcoin (\$72,848). This trust has
+fundamentally different correlation properties than spot BTC:
 
 \begin{itemize}[nosep]
-  \item \textbf{SPY is the cheaper hedge}: 3M ATM puts cost \textbf{2.59\%}
-        of spot vs.\ IWN's 4.00\%, and SPY carries \textit{stronger} negative
-        BTC correlation at the 1M/3M horizon ($-0.112$ vs $-0.028$).
-  \item \textbf{IWN adds diversification}: Near-zero BTC correlation across
-        all windows makes IWN a \textit{pure} diversifier, not a directional
-        BTC hedge. Useful when BTC sentiment is unclear.
-  \item \textbf{Recommended reallocation}: 8--12\% of portfolio (\$15--23K)
-        split between SPY puts (directional BTC hedge) and IWN equity
-        (decorrelated return). Total quarterly hedge cost: \$400--800.
-  \item \textbf{Bullish BTC variant}: When long BTC with conviction, the same
-        IWN allocation acts as a non-correlated return source that doesn't
-        drag on BTC upside---unlike SPY/QQQ which move against BTC tactically.
+  \item \textcolor{warn}{\textbf{Grayscale BTC is +0.76 correlated with SPY}}
+        (20d return correlation). It trades like an equity, not like Bitcoin.
+        SPY puts do \textit{not} hedge this position.
+  \item \textcolor{warn}{\textbf{Grayscale BTC is only +0.10 correlated with
+        spot BTC/USD}} at 20d---the trust barely tracks Bitcoin itself.
+  \item \textbf{Dashboard correlation method is correct}: the runtime service
+        computes Pearson correlation on \textit{log returns} (not price levels).
+        The high equity correlations are real, not a methodological error.
+  \item \textbf{Revised hedge}: since Grayscale BTC moves with equities,
+        the hedge should target equity drawdowns, not BTC-specific risk. GLD
+        is the only negatively correlated asset at short windows.
+\end{itemize}
+
+% ============================================================
+\section{Critical Finding: Grayscale BTC Mini-Trust}
+% ============================================================
+
+\subsection{Instrument Identification}
+
+The portfolio's ``BTC'' position:
+\begin{itemize}[nosep]
+  \item Quantity: 2,763.16 shares at \$32.57/share = \$89,996 (46.1\% of portfolio)
+  \item This is \textbf{Grayscale BTC Mini Trust}, \textit{not} spot Bitcoin
+  \item Spot BTC/USD trades at \$72,848---a 2,237$\times$ price ratio
+\end{itemize}
+
+\subsection{Correlation Divergence: Grayscale vs.\ Spot}
+
+The dashboard (runtime service) computes rolling return correlations across
+7 windows (5--35 trading days). The method is:
+\[
+  \rho_{N}(t) = \frac{\sum_{i=1}^{N}(r^{A}_i - \bar{r}^{A})(r^{B}_i - \bar{r}^{B})}
+  {\sqrt{\sum(r^{A}_i - \bar{r}^{A})^2}\;\sqrt{\sum(r^{B}_i - \bar{r}^{B})^2}}
+  \quad\text{where } r_i = \ln\!\left(\frac{P_i}{P_{i-1}}\right)
+\]
+
+This is the \textbf{correct} Pearson correlation on log returns.
+
+\begin{table}[H]
+\centering
+\caption{Return correlation with equities: Grayscale BTC vs.\ Spot BTC/USD}
+\begin{tabular}{lcccc}
+\toprule
+ & \multicolumn{2}{c}{\textbf{Grayscale BTC} (\$32)} & \multicolumn{2}{c}{\textbf{Spot BTC/USD} (\$72K)} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Ticker & 20d & 30d & 20d & 30d \\
+\midrule
+SPY & \textcolor{loss}{+0.758} & \textcolor{loss}{+0.651} & --0.115 & --0.180 \\
+QQQ & \textcolor{loss}{+0.752} & \textcolor{loss}{+0.639} & --0.076 & --0.121 \\
+IWM & \textcolor{loss}{+0.771} & \textcolor{loss}{+0.606} & --0.350 & --0.355 \\
+GLD & +0.422 & +0.271 & --0.219 & +0.051 \\
+DIA & \textcolor{loss}{+0.712} & +0.474 & --0.167 & --0.272 \\
+EFA & +0.473 & +0.351 & --0.222 & --0.078 \\
+\midrule
+\textit{Spot BTC/USD} & \textit{+0.109} & \textit{+0.097} & --- & --- \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{The Grayscale trust is a de facto equity position}: $+0.76$ corr with
+SPY, $+0.77$ with IWM, and \textit{only} $+0.10$ with the Bitcoin it claims
+to track. The trust's NAV discount/premium dynamics, share creation mechanics,
+and equity market microstructure dominate its return distribution.
+
+\subsection{Implication for Hedging}
+
+Our prior analysis (Section~\ref{sec:spot}) used \textit{spot BTC/USD}
+correlations, which showed SPY as negatively correlated ($-0.112$ at 63d).
+That analysis is correct for \textbf{spot Bitcoin}---but \textbf{wrong for
+our actual portfolio holding}. Since Grayscale BTC moves with equities:
+
+\begin{itemize}[nosep]
+  \item \textbf{SPY puts do not hedge Grayscale BTC}---they move in the same
+        direction. When SPY drops, Grayscale BTC drops too ($\rho = +0.76$).
+  \item \textbf{IWN equity does not diversify Grayscale BTC}---IWM (the
+        closest proxy) is $+0.77$ correlated with the trust.
+  \item \textbf{GLD is the only potential hedge}: negative to low correlation
+        with both Grayscale BTC and equities.
 \end{itemize}
 
 % ============================================================
@@ -84,7 +153,7 @@ Buying power & \$18,067 \\
 \toprule
 Symbol & Mkt Value & Unrealized P\&L & Weight \\
 \midrule
-BTC    & \$89,996 & \textcolor{gain}{+\$2,700 (+3.1\%)}  & 46.1\% \\
+BTC (Grayscale) & \$89,996 & \textcolor{gain}{+\$2,700 (+3.1\%)}  & 46.1\% \\
 PGR    & \$20,894 & \textcolor{gain}{+\$9,214 (+78.9\%)} & 10.7\% \\
 MSFT   & \$13,935 & \textcolor{gain}{+\$10,665 (+326\%)} &  7.1\% \\
 QQQ    & \$10,087 & \textcolor{gain}{+\$874 (+9.5\%)}    &  5.2\% \\
@@ -99,125 +168,105 @@ BRK.B  & \$8,292  & \textcolor{loss}{--\$477 (--5.4\%)}   &  4.2\% \\
 \end{tabular}
 \end{table}
 
-BTC is \textbf{46\% of portfolio market value}. We already hold SPY (4.7\%)
-and VOO (4.3\%)---combined \textbf{9\% S\&P~500 exposure}. The portfolio has
-\textbf{zero options positions}. Adding a put overlay on existing SPY is
-operationally simple; adding IWN requires a new equity position.
+Given that Grayscale BTC ($\rho \approx +0.75$ with equities), plus SPY, VOO,
+QQQ, and MSFT, the portfolio has \textbf{effective equity beta of
+${\raise.17ex\hbox{$\scriptstyle\sim$}}$80\%}---far higher than the apparent
+46\% ``BTC'' weighting suggests.
 
 % ============================================================
-\section{Rolling Correlation: 1M Windows vs.\ BTC}
+\section{Spot BTC/USD Correlation (Reference)}
+\label{sec:spot}
 % ============================================================
 
-Prior analysis used 3M/6M/12M trailing windows. We now focus on
-\textbf{1-month (21-day) rolling correlation}, which captures the tactical
-regime most relevant for quarterly put overlays.
-
-\subsection{Correlation Snapshot Across Windows}
+For completeness, the \textit{spot BTC/USD} correlations from our 2-year
+lookback analysis (which remain correct for actual Bitcoin exposure):
 
 \begin{table}[H]
 \centering
-\caption{Rolling correlation with BTC (Pearson, log returns)}
+\caption{Rolling correlation with \textit{spot} BTC/USD (Pearson, log returns)}
 \begin{tabular}{lcccc}
 \toprule
 Ticker & 30d Vol & 3M (63d) & 6M (126d) & 12M (252d) \\
 \midrule
-\textbf{SPY}  & 12.69\% & \textcolor{highlight}{--0.112} & --0.060 & +0.030 \\
-\textbf{QQQ}  & 17.19\% & \textcolor{highlight}{--0.135} & --0.073 & +0.012 \\
-\textbf{IWN}  & 17.84\% & --0.028 & +0.021 & +0.060 \\
+SPY  & 12.69\% & --0.112 & --0.060 & +0.030 \\
+QQQ  & 17.19\% & --0.135 & --0.073 & +0.012 \\
+IWN  & 17.84\% & --0.028 & +0.021 & +0.060 \\
 IWM  & 19.28\% & +0.021 & +0.063 & +0.076 \\
-IWO  & 21.28\% & +0.049 & +0.086 & +0.085 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\subsection{Key Observations}
-
-\begin{enumerate}[nosep]
-  \item \textbf{SPY and QQQ are more negatively correlated with BTC} than
-        IWN at the 3M horizon ($-0.112$ and $-0.135$ vs $-0.028$). This
-        negative correlation strengthens at shorter windows---at the 1M
-        rolling level, large-cap indices tend to diverge further from BTC
-        during risk-off rotations.
-  \item \textbf{IWN is correlation-neutral across all windows}: it never
-        exceeds $|\rho| = 0.06$. This makes it a \textit{diversifier} rather
-        than a \textit{hedge}---it won't move against BTC, but it also won't
-        move with it.
-  \item \textbf{IWM and IWO (growth) are positively correlated}: Russell 2000
-        blend/growth track BTC modestly, especially at 6--12M ($+0.06$ to
-        $+0.09$). Avoid these as BTC hedges.
-  \item \textbf{Correlation is regime-dependent}: All tickers show a
-        negative-to-positive drift from 3M to 12M, suggesting recent
-        tactical divergence from a longer-term macro co-movement.
-\end{enumerate}
-
-\subsection{Rolling 1M Correlation Framework}
-
-The existing pipeline computes $\rho_{63d}$, $\rho_{126d}$, $\rho_{252d}$.
-For the 1M tactical signal, we add a 21-day window:
-\[
-  \rho_{1M}(t) = \mathrm{corr}\bigl(\{r^{\mathrm{BTC}}_i\}_{i=t-20}^{t},\;
-                  \{r^{\mathrm{asset}}_i\}_{i=t-20}^{t}\bigr)
-\]
-where $r_i = \ln(P_i / P_{i-1})$. This will be available from the Redis
-feed once deployed, using the \texttt{bars} field in the \texttt{OptionsRecord}
-proto. For now, the 3M snapshot serves as a conservative proxy.
+These are \textbf{only relevant if the portfolio converts to spot BTC}
+(via direct Bitcoin custody or a spot ETF like IBIT). If the portfolio
+continues to hold the Grayscale trust, the Table~1 correlations govern.
 
 % ============================================================
-\section{Put Cost: IWN vs.\ SPY (S\&P~500)}
+\section{Put Cost Comparison}
 % ============================================================
 
 \begin{table}[H]
 \centering
-\caption{ATM put cost comparison ($r=4.5\%$, vol = 30d realized)}
+\caption{ATM put cost ($r=4.5\%$, vol = 30d realized)}
 \begin{tabular}{lccccc}
 \toprule
 Ticker & Spot & 30d Vol & 3M Put \% & 6M Put \% & 12M Put \% \\
 \midrule
-\textbf{SPY} & \$686.38 & 12.69\% & \textbf{2.593\%} & 3.191\% & 3.687\% \\
-IWN          & \$198.95 & 17.84\% & 3.998\%           & 5.118\% & 6.259\% \\
-IWM          & \$263.81 & 19.28\% & 4.393\%           & 5.665\% & 6.999\% \\
-QQQ          & \$608.09 & 17.19\% & 3.820\%           & 4.873\% & 5.928\% \\
-CRWD         & \$384.86 & 62.05\% & 15.678\%          & 21.105\% & 27.725\% \\
+SPY & \$686.38 & 12.69\% & \textbf{2.593\%} & 3.191\% & 3.687\% \\
+IWN & \$198.95 & 17.84\% & 3.998\% & 5.118\% & 6.259\% \\
+QQQ & \$608.09 & 17.19\% & 3.820\% & 4.873\% & 5.928\% \\
+IWM & \$263.81 & 19.28\% & 4.393\% & 5.665\% & 6.999\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{SPY is 35\% cheaper than IWN} on a 3M ATM put (2.59\% vs 4.00\%)
-because its realized vol is lower (12.7\% vs 17.8\%). On a per-dollar basis:
+SPY remains the cheapest put at 2.59\%, but \textbf{the cost comparison is
+now moot for hedging Grayscale BTC}: SPY puts would lose money in the same
+selloff that hits the trust.
+
+% ============================================================
+\section{Revised Reallocation Recommendation}
+% ============================================================
+
+\subsection{The Problem}
+
+The portfolio is \textbf{concentrated in equity beta}, not in ``BTC'':
+\begin{itemize}[nosep]
+  \item Grayscale BTC (46\%) $\approx$ equity ($\rho = +0.76$ to SPY)
+  \item SPY + VOO (9\%) = direct equity
+  \item QQQ (5\%) + MSFT (7\%) = tech/equity
+  \item Effective equity exposure: ${\raise.17ex\hbox{$\scriptstyle\sim$}}$80\%
+\end{itemize}
+
+\subsection{Two Paths Forward}
 
 \begin{table}[H]
 \centering
-\caption{Hedge cost per \$10,000 notional (3M ATM put)}
-\begin{tabular}{lcc}
+\caption{Recommended actions by objective}
+\begin{tabular}{p{3.5cm}p{4cm}p{5cm}}
 \toprule
-Ticker & Cost / \$10K & BTC Corr (3M) \\
+Objective & Action & Rationale \\
 \midrule
-SPY  & \$259  & --0.112 \\
-QQQ  & \$382  & --0.135 \\
-IWN  & \$400  & --0.028 \\
-IWM  & \$439  & +0.021 \\
-CRWD & \$1,568 & --0.052 \\
+\textbf{Path A:} Get actual BTC exposure &
+  Convert Grayscale trust to spot BTC ETF (IBIT, FBTC) &
+  Spot BTC has $-0.11$ corr with SPY. Restores the decorrelation thesis.
+  Then SPY puts become a valid hedge. \\
+\addlinespace
+\textbf{Path B:} Hedge current equity concentration &
+  Buy GLD + reduce equity overlap &
+  GLD is the only asset negatively correlated with Grayscale BTC at short
+  windows. Trim SPY/VOO overlap since BTC already provides that exposure. \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{SPY dominates on cost and correlation}: \$259 per \$10K with $-0.112$
-correlation. IWN costs 54\% more for 75\% less decorrelation. However, IWN
-provides an \textit{independent return stream} (+34.75\% 1Y vs SPY's +37.29\%)
-that doesn't erode in BTC-bullish regimes.
+\subsection{Path A Sizing (if converted to spot BTC)}
 
-% ============================================================
-\section{Reallocation Recommendation}
-% ============================================================
-
-\subsection{Proposed Allocation: 10\% of Portfolio (\$19,500)}
-
-Given a \$195K portfolio with 46\% BTC, we recommend a \textbf{10\%
-reallocation} (\$19,500) structured as:
+If Grayscale is swapped for a spot BTC ETF, the original hedge thesis holds.
+Recommend 10\% reallocation (\$19.5K):
 
 \begin{table}[H]
 \centering
-\caption{Recommended hedge structure}
+\caption{Hedge structure (requires spot BTC conversion)}
 \begin{tabular}{llrrr}
 \toprule
 Component & Instrument & Notional & 3M Cost & Purpose \\
@@ -230,156 +279,101 @@ IWN equity & Long shares        & \$7,500  & ---   & Decorrelated return \\
 \end{tabular}
 \end{table}
 
-\subsection{Sizing Rationale}
+\subsection{Path B Sizing (keeping Grayscale trust)}
 
-\begin{itemize}[nosep]
-  \item \textbf{SPY puts (\$12K notional, \$311/quarter)}: We already hold
-        \$9.3K SPY + \$8.5K VOO = \$17.7K S\&P~500. Buying puts on
-        existing SPY shares costs only \textbf{0.16\% of portfolio per quarter}
-        (0.64\% annualized). SPY's $-0.112$ BTC correlation means the puts
-        gain value precisely when BTC sells off.
-  \item \textbf{IWN equity (\$7.5K, {\raise.17ex\hbox{$\scriptstyle\sim$}}38 shares)}: Adds a
-        non-correlated return source. No put overlay needed on IWN itself---its
-        low vol (17.8\%) and strong 1Y return (+34.75\%) make the equity
-        position self-hedging via value-factor mean reversion.
-  \item \textbf{Total cost}: \$311/quarter = \textbf{0.16\%} of portfolio.
-        At 4 quarters/year, annual hedge cost is \textbf{0.64\%}---well within
-        the 1--2\% budget typical for tail-risk overlays.
-\end{itemize}
-
-\subsection{Sensitivity: Allocation Size}
+If the trust is retained, hedge the equity concentration:
 
 \begin{table}[H]
 \centering
-\caption{Reallocation scenarios}
-\begin{tabular}{rrrrl}
+\caption{Equity-concentration hedge (current holdings)}
+\begin{tabular}{llrrr}
 \toprule
-Total \% & SPY Puts & IWN Equity & Quarterly Cost & Annual Cost \% \\
+Component & Instrument & Notional & 3M Cost & Purpose \\
 \midrule
- 5\% (\$9.7K)  & \$6K  & \$3.7K  & \$156  & 0.32\% \\
- 8\% (\$15.6K) & \$10K & \$5.6K  & \$259  & 0.53\% \\
-\textbf{10\% (\$19.5K)} & \textbf{\$12K} & \textbf{\$7.5K} & \textbf{\$311} & \textbf{0.64\%} \\
-12\% (\$23.4K) & \$15K & \$8.4K  & \$389  & 0.80\% \\
-15\% (\$29.2K) & \$18K & \$11.2K & \$467  & 0.96\% \\
+GLD equity & Long shares & \$10,000 & --- & Negative equity corr \\
+Trim SPY/VOO & Sell overlap & --\$8,000 & --- & Reduce redundant beta \\
+\midrule
+\textbf{Net} & & \textbf{\$2,000} & \textbf{\$0/qtr} & \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The 10\% level balances hedge efficacy against opportunity cost. Going above
-12\% meaningfully reduces BTC upside capture without proportionally improving
-tail protection.
+This nets out to a small capital deployment: sell \$8K of SPY/VOO (redundant
+with Grayscale BTC's equity behavior) and buy \$10K GLD. No options premium
+required.
 
 % ============================================================
-\section{Bullish BTC Variant}
-% ============================================================
-
-The same allocation works \textit{asymmetrically} under bullish BTC sentiment:
-
-\begin{table}[H]
-\centering
-\caption{Regime behavior of the hedge portfolio}
-\begin{tabular}{lcc}
-\toprule
-Scenario & SPY Puts & IWN Equity \\
-\midrule
-BTC sells off & \textcolor{gain}{Puts gain value} ($\rho = -0.11$) & Neutral (uncorrelated) \\
-BTC rallies   & Puts decay (cost = 0.16\%/qtr) & \textcolor{gain}{Earns independent return} \\
-BTC flat      & Puts decay (small cost)         & \textcolor{gain}{Earns value premium} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\textbf{When bullish on BTC}, the IWN component is especially attractive:
-
-\begin{itemize}[nosep]
-  \item IWN's near-zero correlation ($\bar{\rho} = -0.002$) means it
-        \textbf{doesn't drag on BTC rallies}. Unlike SPY ($\rho = -0.11$),
-        which tends to weaken when BTC surges, IWN moves independently.
-  \item The \textbf{value premium} in small-cap value (+34.75\% 1Y) provides
-        a return floor even in BTC-flat environments.
-  \item \textbf{No put needed on IWN}: if you're bullish BTC and just want
-        diversification (not hedging), hold IWN equity without the put
-        overlay, reducing quarterly cost to zero for that leg.
-  \item \textbf{SPY puts become optional}: in a strong bull BTC regime, you
-        can scale SPY puts down to 5\% OTM (\$0.71/share, 67\% cheaper)
-        as a tail-only insurance rather than ATM protection.
-\end{itemize}
-
-\subsection{Conviction-Adjusted Sizing}
-
-\begin{table}[H]
-\centering
-\caption{Allocation by BTC conviction level}
-\begin{tabular}{lccr}
-\toprule
-BTC View & SPY Puts & IWN Equity & Quarterly Cost \\
-\midrule
-Bearish / uncertain & 3M ATM (\$12K) & \$7.5K & \$311 \\
-Mildly bullish      & 3M 5\% OTM (\$12K) & \$7.5K & \$104 \\
-Strongly bullish    & None               & \$12K  & \$0   \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-In the strongly bullish case, the full 10\% goes to IWN equity---a
-non-correlated return source that compounds independently of BTC while
-maintaining portfolio diversification.
-
-% ============================================================
-\section{Comparison: Full Hedge Efficiency Table}
+\section{Bullish BTC Sentiment Variant}
 % ============================================================
 
 \begin{table}[H]
 \centering
-\caption{Hedge efficiency: cost per unit of BTC decorrelation}
-\begin{tabular}{lccccc}
+\caption{Strategy by conviction (Grayscale trust vs.\ spot BTC)}
+\begin{tabular}{lp{5cm}p{5cm}}
 \toprule
-Ticker & $\rho_{3M}$ & 3M Put \% & Cost/\$10K & $|\rho|$ / Cost & Rank \\
+BTC View & Holding Grayscale Trust & After Spot BTC Conversion \\
 \midrule
-SPY   & --0.112 & 2.59\% & \$259 & 0.043 & \textbf{1} \\
-QQQ   & --0.135 & 3.82\% & \$382 & 0.035 & 2 \\
-IWN   & --0.028 & 4.00\% & \$400 & 0.007 & 4 \\
-CRWD  & --0.052 & 15.68\% & \$1,568 & 0.003 & 5 \\
-IWM   & +0.021 & 4.39\% & \$439 & --- & --- \\
+Bearish &
+  Buy GLD (\$10K), trim SPY/VOO. No puts needed---trust already drops with
+  equities. &
+  Buy SPY 3M ATM puts (\$311/qtr). Add IWN equity (\$7.5K). \\
+\addlinespace
+Neutral &
+  Hold. The trust's equity beta means the portfolio is a leveraged equity
+  bet, not a BTC bet. &
+  SPY 5\% OTM puts (\$104/qtr). IWN equity (\$7.5K). \\
+\addlinespace
+Bullish &
+  \textbf{Convert to spot BTC}. The trust captures only $\rho = 0.10$ of BTC
+  upside---you're paying for Bitcoin exposure but getting equity exposure. &
+  Hold spot BTC. IWN equity (\$12K) as non-correlated return. No puts. \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-SPY has \textbf{6$\times$ the decorrelation-per-dollar} of IWN. But IWN's
-value is not as a put-hedge---it's as \textbf{equity diversification} that
-doesn't require ongoing option premium.
+\textbf{Key insight}: if bullish on BTC, the Grayscale trust is the wrong
+instrument---it barely tracks Bitcoin ($\rho = 0.10$). Converting to a spot
+BTC ETF captures the thesis; then IWN equity (zero BTC correlation) provides
+diversification without dragging on BTC upside.
 
 % ============================================================
-\section{Historical Trade Context}
+\section{Dashboard Correlation Validation}
 % ============================================================
 
-The allocation engine runs 23 positions with no active options overlay:
+We validated the runtime service dashboard's correlation method against the
+raw daily price series served by \texttt{/api/dashboard-data}:
 
-\begin{itemize}[nosep]
-  \item \textbf{MSFT} (+326\%) and \textbf{PGR} (+79\%): low-vol, quality-factor
-        winners consistent with the IWN thesis.
-  \item \textbf{HOOD} (--42\%) and \textbf{TSPH} (--99\%): high-vol losers that
-        would have benefited from protective puts.
-  \item 326 historical state snapshots available via runtime service.
-  \item No drift metrics currently populated---engine between rebalances.
-\end{itemize}
+\begin{table}[H]
+\centering
+\caption{Dashboard validation: Grayscale BTC vs.\ SPY}
+\begin{tabular}{lccc}
+\toprule
+Window & Dashboard & Our Return Corr & Match \\
+\midrule
+5d  & +0.901 & +0.901 & exact \\
+10d & +0.757 & +0.767 & $\Delta$ 0.01 \\
+20d & +0.762 & +0.758 & $\Delta$ 0.004 \\
+30d & +0.639 & +0.651 & $\Delta$ 0.01 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The dashboard correctly computes Pearson correlation on log returns.
+Minor discrepancies ($\leq 0.01$) are due to data refresh timing.
 
 % ============================================================
 \section{Audit Pipeline (Pending Deployment)}
 % ============================================================
 
 The \texttt{audit/} module reads \texttt{options:\{OCC\}} Redis hashes via
-the \texttt{OptionsRecord} protobuf. Six checks run per record: identity,
-staleness ($<$5min), pricing sanity, spread ($<$10\%), greeks presence,
-order drift ($<$20\%). Once live:
+the \texttt{OptionsRecord} protobuf. Once live:
 
 \begin{itemize}[nosep]
-  \item Compare \textbf{implied vol} vs.\ realized for IWN and SPY to confirm
-        whether puts are truly cheap or fairly priced.
-  \item Compute \textbf{rolling 21-day correlation} from bar data to track
-        $\rho_{1M}$ in real time.
-  \item \textbf{Inflow demand signals} (deferred): layer in ETF flow data to
-        detect regime shifts that alter correlation structure.
+  \item Compare \textbf{implied vol} vs.\ realized for IWN and SPY.
+  \item Compute \textbf{rolling 21-day correlation} from bar data for both
+        Grayscale BTC and spot BTC/USD against all hedge candidates.
+  \item \textbf{Track trust NAV premium/discount} to monitor when Grayscale
+        BTC diverges from spot---this drives the correlation gap.
 \end{itemize}
 
 % ============================================================
@@ -387,16 +381,22 @@ order drift ($<$20\%). Once live:
 % ============================================================
 
 \begin{enumerate}
-  \item \textbf{SPY puts are the most cost-efficient BTC hedge}: 2.59\% of
-        spot for $-0.112$ correlation, and we already hold the underlying.
-  \item \textbf{IWN adds non-correlated return}: near-zero $\rho$ across all
-        windows means it diversifies without hedging---ideal for bullish or
-        uncertain BTC regimes.
-  \item \textbf{Recommended: 10\% reallocation} (\$19.5K) split 60/40 between
-        SPY put overlay and IWN equity. Quarterly cost: \$311 (0.16\% of
-        portfolio). Scale SPY puts to OTM when bullish BTC.
-  \item \textbf{Next}: Deploy Redis feed, read live IV for IWN/SPY, compute
-        rolling 1M correlation, add inflow demand signals.
+  \item \textbf{The portfolio holds Grayscale BTC, not spot Bitcoin}: the trust
+        is $+0.76$ correlated with SPY and only $+0.10$ with spot BTC/USD.
+        The portfolio's effective equity beta is
+        ${\raise.17ex\hbox{$\scriptstyle\sim$}}$80\%, not the apparent 46\%
+        ``BTC'' weighting.
+  \item \textbf{SPY puts do not hedge Grayscale BTC}: they move in the same
+        direction. The prior hedge recommendation is invalid for the current
+        holding.
+  \item \textbf{If bullish BTC, convert to spot}: a spot BTC ETF (IBIT, FBTC)
+        captures Bitcoin upside. Then SPY puts + IWN equity become valid hedges
+        (\$311/qtr for 10\% reallocation).
+  \item \textbf{If keeping the trust}: trim redundant SPY/VOO exposure (\$8K)
+        and add GLD (\$10K) for equity-concentration hedging. No options cost.
+  \item \textbf{Dashboard correlations are correct}: the runtime service uses
+        log-return Pearson correlation. The high positive values for Grayscale
+        BTC vs.\ equities are real.
 \end{enumerate}
 
 \end{document}
