@@ -39,23 +39,24 @@
 \section{Executive Summary}
 % ============================================================
 
-A review of the runtime service dashboard revealed a \textbf{critical
-instrument mismatch}: the portfolio holds \textbf{Grayscale BTC Mini Trust}
-(ticker BTC, \$32.35/share), not spot Bitcoin (\$72,848). This trust has
-fundamentally different correlation properties than spot BTC:
+The portfolio holds \textbf{Grayscale BTC Mini Trust}
+(ticker BTC, \$32.35/share), representing 46.1\% of portfolio value.
+A full-history backtest (398 trading days) and thesis decay analysis reveal:
 
 \begin{itemize}[nosep]
-  \item \textcolor{warn}{\textbf{Grayscale BTC is +0.76 correlated with SPY}}
-        (20d return correlation). It trades like an equity, not like Bitcoin.
-        SPY puts do \textit{not} hedge this position.
-  \item \textcolor{warn}{\textbf{Grayscale BTC is only +0.10 correlated with
-        spot BTC/USD}} at 20d---the trust barely tracks Bitcoin itself.
-  \item \textbf{Dashboard correlation method is correct}: the runtime service
-        computes Pearson correlation on \textit{log returns} (not price levels).
-        The high equity correlations are real, not a methodological error.
-  \item \textbf{Revised hedge}: since Grayscale BTC moves with equities,
-        the hedge should target equity drawdowns, not BTC-specific risk. GLD
-        is the only negatively correlated asset at short windows.
+  \item \textbf{Grayscale BTC does track spot Bitcoin}: $\rho = +0.97$ (21d)
+        and $+0.97$ (63d) with BTC/USD, and $+1.00$ with IBIT (spot BTC ETF).
+        The dashboard's short-window equity correlations ($+0.53$ to $+0.66$
+        at 21d--63d) reflect BTC's broader equity co-movement, not a trust defect.
+  \item \textbf{Equity correlation is moderate, not extreme}: Grayscale BTC
+        $\leftrightarrow$ SPY averages $+0.45$ (63d) and exceeds $+0.50$ only
+        39\% of the time. This is typical of crypto-equity regimes.
+  \item \textbf{Backtest validates Path B}: adding GLD + trimming SPY/VOO
+        produced \textcolor{gain}{+23.6\% total return}, 0.35 Sharpe, and
+        $-26.8\%$ max DD---outperforming both the baseline (+17.6\%, 0.22 Sharpe)
+        and Path A (+15.8\%, 0.18 Sharpe, dragged by \$4,585 in put premiums).
+  \item \textbf{Direct put protection remains prohibitive}: at 81.5\% realized
+        vol, Grayscale BTC puts cost 14\% of spot per quarter.
 \end{itemize}
 
 % ============================================================
@@ -341,17 +342,17 @@ Neutral &
   SPY 5\% OTM puts (\$104/qtr). IWN equity (\$7.5K). \\
 \addlinespace
 Bullish &
-  \textbf{Convert to spot BTC}. The trust captures only $\rho = 0.10$ of BTC
-  upside---you're paying for Bitcoin exposure but getting equity exposure. &
+  Hold Grayscale BTC---backtest confirms it tracks spot BTC ($\rho = 0.97$).
+  Add GLD (\$10K) for equity drawdown protection. &
   Hold spot BTC. IWN equity (\$12K) as non-correlated return. No puts. \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Key insight}: if bullish on BTC, the Grayscale trust is the wrong
-instrument---it barely tracks Bitcoin ($\rho = 0.10$). Converting to a spot
-BTC ETF captures the thesis; then IWN equity (zero BTC correlation) provides
-diversification without dragging on BTC upside.
+\textbf{Key insight}: the Grayscale trust does track Bitcoin ($\rho = 0.97$),
+so conversion to a spot ETF is optional, not required. The backtest shows
+the GLD hedge (Path B) delivers superior risk-adjusted returns regardless
+of BTC conviction.
 
 % ============================================================
 \section{Dashboard Correlation Validation}
@@ -394,28 +395,112 @@ the \texttt{OptionsRecord} protobuf. Once live:
 \end{itemize}
 
 % ============================================================
+\section{Thesis Stability \& Backtest Validation}
+% ============================================================
+
+A full-history analysis (398 trading days, 2024-07-31 to 2026-03-04) using
+daily price data from yfinance tests whether the correlation thesis is stable
+and whether the proposed strategies outperform.
+
+\subsection{Thesis Decay: Was the Equity Correlation Always This High?}
+
+\begin{table}[H]
+\centering
+\caption{63-day rolling correlation evolution: Grayscale BTC vs.\ ETFs}
+\begin{tabular}{lcccccc}
+\toprule
+Ticker & Earliest & Latest & Change & Mean & Std \\
+\midrule
+SPY      & +0.629 & +0.528 & --0.101 & +0.448 & 0.077 \\
+QQQ      & +0.551 & +0.510 & --0.041 & +0.463 & 0.087 \\
+IWM      & +0.628 & +0.536 & --0.092 & +0.489 & 0.078 \\
+GLD      & +0.443 & +0.192 & --0.251 & +0.083 & 0.124 \\
+IWN      & +0.615 & +0.440 & --0.174 & +0.454 & 0.089 \\
+BTC/USD  & +0.885 & +0.968 & +0.083  & +0.896 & 0.044 \\
+IBIT     & +0.999 & +1.000 & +0.001  & +0.999 & 0.001 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Key findings}:
+\begin{itemize}[nosep]
+  \item Grayscale BTC tracks spot BTC extremely well ($\rho = +0.97$) and is
+        essentially identical to IBIT ($\rho = +1.00$). The trust is \textit{not}
+        fundamentally broken.
+  \item Equity correlation (SPY mean $+0.45$, range $+0.37$ to $+0.63$) is
+        moderate and \textbf{declining}: the latest 63d reading ($+0.53$) is
+        below the initial ($+0.63$).
+  \item The SPY correlation exceeded $+0.50$ only \textbf{39\% of the time}
+        (first breach: 2024-08-29), not persistently.
+  \item GLD correlation has \textbf{collapsed} from $+0.44$ to $+0.19$, making
+        it an increasingly effective diversifier.
+\end{itemize}
+
+\subsection{Strategy Backtests (2024-07-31 to 2026-03-04)}
+
+Three strategies backtested on 399 trading days of daily price data:
+
+\begin{table}[H]
+\centering
+\caption{Backtest performance comparison (\$194,917 initial value)}
+\begin{tabular}{lcccccc}
+\toprule
+Strategy & Total Ret & Ann Ret & Ann Vol & Sharpe & Max DD & Calmar \\
+\midrule
+Baseline (current)          & +17.6\% & +10.8\% & 28.8\% & 0.22 & --28.1\% & 0.38 \\
+Path A (IBIT + SPY puts)    & +15.8\% &  +9.7\% & 29.1\% & 0.18 & --28.3\% & 0.34 \\
+\textcolor{gain}{\textbf{Path B (BTC + GLD)}} & \textcolor{gain}{\textbf{+23.6\%}} & \textcolor{gain}{\textbf{+14.4\%}} & \textbf{28.0\%} & \textcolor{gain}{\textbf{0.35}} & \textbf{--26.8\%} & \textcolor{gain}{\textbf{0.54}} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}[nosep]
+  \item \textbf{Path B dominates} on every metric: higher return, lower vol,
+        better Sharpe, shallower drawdown, and zero options cost.
+  \item \textbf{Path A underperforms the baseline}: 7 quarterly put rolls cost
+        \$4,585 in premiums. The protective puts dragged returns without
+        meaningfully reducing max drawdown (--28.3\% vs.\ --28.1\%).
+  \item The \textbf{GLD hedge works}: adding 10\% GLD + trimming SPY/VOO
+        added ${\raise.17ex\hbox{$\scriptstyle\sim$}}$6\% return while cutting
+        1.3pp of drawdown. GLD's declining correlation with Grayscale BTC
+        ($+0.19$ latest) makes this increasingly effective.
+\end{itemize}
+
+\subsection{Actual Portfolio (Runtime Service)}
+
+The runtime service stores rolling 15-minute snapshots (50 most recent). Over
+the latest available window (2026-03-04 14:43 to 2026-03-05 03:02):
+\begin{itemize}[nosep]
+  \item Equity: \$97,639 $\rightarrow$ \$99,968 (+2.4\% intraday)
+  \item Portfolio value: \$192,589 $\rightarrow$ \$194,917
+\end{itemize}
+Longer-term actuals require a time-series database or snapshot archival---the
+current API retains only ${\raise.17ex\hbox{$\scriptstyle\sim$}}$12 hours of
+history.
+
+% ============================================================
 \section{Conclusion \& Next Steps}
 % ============================================================
 
 \begin{enumerate}
-  \item \textbf{Grayscale BTC is an equity position}: the trust is $+0.63$
-        to $+0.90$ correlated with SPY across all windows (5d--35d). The
-        portfolio's effective equity beta is
-        ${\raise.17ex\hbox{$\scriptstyle\sim$}}$80\%, not the apparent 46\%
-        ``BTC'' weighting.
-  \item \textbf{Direct put protection is prohibitive}: Grayscale BTC's 73.7\%
-        vol means a 3M ATM put costs 14\% of spot (\$12.5K/qtr for the full
-        position), 5.4$\times$ more than SPY puts.
-  \item \textbf{SPY puts do not hedge Grayscale BTC}: they move in the same
-        direction ($\rho = +0.76$).
-  \item \textbf{If bullish BTC, convert to spot}: a spot BTC ETF (IBIT, FBTC)
-        captures actual Bitcoin upside. Then SPY puts + IWN equity become
-        valid hedges (\$311/qtr for 10\% reallocation).
-  \item \textbf{If keeping the trust}: trim redundant SPY/VOO exposure (\$8K)
-        and add GLD (\$10K) for equity-concentration hedging. No options cost.
-  \item \textbf{Dashboard correlations are correct}: the runtime service uses
-        log-return Pearson correlation. The high positive values for Grayscale
-        BTC vs.\ equities are real.
+  \item \textbf{Grayscale BTC tracks spot Bitcoin well}: $\rho = +0.97$ with
+        BTC/USD and $+1.00$ with IBIT over the full history. The trust is a
+        valid Bitcoin proxy, not a broken instrument.
+  \item \textbf{Equity correlation is moderate and declining}: SPY correlation
+        averages $+0.45$ (63d), down from $+0.63$ initially. This is typical
+        crypto-equity co-movement, not a structural defect. The correlation
+        exceeds $+0.50$ only 39\% of the time.
+  \item \textbf{Path B is the recommended action}: adding 10\% GLD and trimming
+        SPY/VOO produced the best risk-adjusted returns in backtesting (+23.6\%
+        total, 0.35 Sharpe, --26.8\% max DD). Zero options cost.
+  \item \textbf{Path A (SPY puts) does not help}: 7 quarterly put rolls cost
+        \$4,585 and failed to reduce max drawdown. The put premium drag
+        outweighs the protection benefit.
+  \item \textbf{Direct put protection is prohibitive}: at 81.5\% realized vol,
+        Grayscale BTC 3M ATM puts cost 14\% of spot (\$12.5K/qtr).
+  \item \textbf{Snapshot archival needed}: the runtime service retains only
+        ${\raise.17ex\hbox{$\scriptstyle\sim$}}$12 hours of snapshots. A
+        time-series store would enable continuous thesis monitoring.
 \end{enumerate}
 
 \end{document}
