@@ -138,8 +138,12 @@ def run_analysis():
 
     # Calculate rolling correlations
     print("\n" + "=" * 70)
-    print("ROLLING CORRELATIONS (30-day and 60-day windows)")
+    print("ROLLING CORRELATIONS (7-day, 30-day, and 60-day windows)")
     print("=" * 70)
+
+    corr_7d_btc = rolling_correlation(combined, "IWN", "BTC", 7)
+    corr_7d_qqq = rolling_correlation(combined, "IWN", "QQQ", 7)
+    corr_7d_spy = rolling_correlation(combined, "IWN", "SPY", 7)
 
     corr_30d_btc = rolling_correlation(combined, "IWN", "BTC", 30)
     corr_30d_qqq = rolling_correlation(combined, "IWN", "QQQ", 30)
@@ -150,6 +154,11 @@ def run_analysis():
     corr_60d_spy = rolling_correlation(combined, "IWN", "SPY", 60)
 
     # Latest correlations
+    print(f"\n  Current 7-day correlations:")
+    print(f"    IWN vs BTC: {corr_7d_btc.iloc[-1]:.3f}")
+    print(f"    IWN vs QQQ: {corr_7d_qqq.iloc[-1]:.3f}")
+    print(f"    IWN vs SPY: {corr_7d_spy.iloc[-1]:.3f}")
+
     print(f"\n  Current 30-day correlations:")
     print(f"    IWN vs BTC: {corr_30d_btc.iloc[-1]:.3f}")
     print(f"    IWN vs QQQ: {corr_30d_qqq.iloc[-1]:.3f}")
@@ -172,6 +181,7 @@ def run_analysis():
     _plot_6month_zoom(iwn_df, combined, rolling_vol_30d, rolling_vol_60d)
     _plot_correlations(
         combined,
+        corr_7d_btc, corr_7d_qqq, corr_7d_spy,
         corr_30d_btc, corr_30d_qqq, corr_30d_spy,
         corr_60d_btc, corr_60d_qqq, corr_60d_spy,
     )
@@ -242,12 +252,13 @@ def _plot_6month_zoom(iwn_df, combined, rolling_vol_30d, rolling_vol_60d):
 
 def _plot_correlations(
     combined,
+    corr_7d_btc, corr_7d_qqq, corr_7d_spy,
     corr_30d_btc, corr_30d_qqq, corr_30d_spy,
     corr_60d_btc, corr_60d_qqq, corr_60d_spy,
 ):
     """Plot 2: Rolling correlations with BTC, QQQ, SPY"""
     plt.close("all")
-    fig, axes = plt.subplots(2, 1, figsize=(14, 10))
+    fig, axes = plt.subplots(3, 1, figsize=(14, 14))
     fig.suptitle(
         "IWN Rolling Correlations (BTC, QQQ, SPY)",
         fontsize=14, fontweight="bold",
@@ -255,8 +266,21 @@ def _plot_correlations(
 
     dates = combined.index
 
-    # Panel 1: 30-day correlations
+    # Panel 1: 7-day correlations
     ax = axes[0]
+    ax.plot(dates, corr_7d_btc, color="#F7931A", linewidth=1.5, label="IWN vs BTC", alpha=0.7)
+    ax.plot(dates, corr_7d_qqq, color="#00AA00", linewidth=1.5, label="IWN vs QQQ", alpha=0.9)
+    ax.plot(dates, corr_7d_spy, color="#0066CC", linewidth=1.5, label="IWN vs SPY")
+
+    ax.axhline(0, color="black", linewidth=0.8, linestyle="--", alpha=0.5)
+    ax.set_ylabel("Correlation", fontsize=11)
+    ax.set_ylim(-1, 1)
+    ax.legend(loc="best", fontsize=10)
+    ax.grid(True, alpha=0.3, linestyle="--")
+    ax.set_title("7-Day Rolling Correlation", fontsize=12, fontweight="bold")
+
+    # Panel 2: 30-day correlations
+    ax = axes[1]
     ax.plot(dates, corr_30d_btc, color="#F7931A", linewidth=2, label="IWN vs BTC", alpha=0.8)
     ax.plot(dates, corr_30d_qqq, color="#00AA00", linewidth=2, label="IWN vs QQQ")
     ax.plot(dates, corr_30d_spy, color="#0066CC", linewidth=2, label="IWN vs SPY")
@@ -268,8 +292,8 @@ def _plot_correlations(
     ax.grid(True, alpha=0.3, linestyle="--")
     ax.set_title("30-Day Rolling Correlation", fontsize=12, fontweight="bold")
 
-    # Panel 2: 60-day correlations
-    ax = axes[1]
+    # Panel 3: 60-day correlations
+    ax = axes[2]
     ax.plot(dates, corr_60d_btc, color="#F7931A", linewidth=2, label="IWN vs BTC", alpha=0.8)
     ax.plot(dates, corr_60d_qqq, color="#00AA00", linewidth=2, label="IWN vs QQQ")
     ax.plot(dates, corr_60d_spy, color="#0066CC", linewidth=2, label="IWN vs SPY")
