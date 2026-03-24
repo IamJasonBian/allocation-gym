@@ -1,6 +1,6 @@
 # eBay Auction Signals & Winning Strategy
 
-> Reference doc for `crane_gym` — covers signal taxonomy, scraping cadence, bid timing, and execution architecture for auction-mode listings.
+> Reference doc for `allocation_gym` — covers signal taxonomy, scraping cadence, bid timing, and execution architecture for auction-mode listings.
 
 ---
 
@@ -201,10 +201,10 @@ In order of impact:
 
 ---
 
-## Module Placement in crane_gym
+## Module Placement in allocation_gym
 
 ```
-crane_gym/
+allocation_gym/
 ├── scrapers/
 │   ├── countdown_client.py     # Countdown API wrapper (search, item detail)
 │   ├── ebay_shopping_api.py    # GetSingleItem for end_time, start_price

@@ -3,7 +3,7 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "crane-gym"
+name = "allocation-gym"
 version = "0.1.0"
 description = "eBay GPU, storage & hardware scalping analysis toolkit"
 requires-python = ">=3.10"
@@ -17,4 +17,4 @@ dependencies = [
 dev = ["pytest>=7.0", "ruff>=0.1"]
 
 [project.scripts]
-crane-gym = "crane_gym.cli:main"
+allocation-gym = "allocation_gym.cli:main"
