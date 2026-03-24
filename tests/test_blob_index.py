@@ -209,3 +209,54 @@ def test_to_dataframe():
     df = idx.to_dataframe(columns=["symbol", "strike", "option_type", "implied_volatility"])
     assert len(df) == 10
     assert list(df.columns) == ["symbol", "strike", "option_type", "implied_volatility"]
+
+
+# ── Multiple records per date (duplicate symbols across intraday snapshots) ──
+#
+# Scenario: the blob store accumulates snapshots across multiple intraday polls.
+# The same OCC symbol appears once per poll, so a "by_symbol" index built over
+# the combined list contains N entries per symbol instead of 1.
+#
+# Expected behaviour (once fixed): build_index("by_symbol") should keep only
+# the LATEST record per symbol so that callers can do:
+#
+#     snap = idx.get("by_symbol", "CRWD260418C00350000")[0]
+#
+# and be guaranteed a single result.
+#
+# This test FAILS with the current implementation because no deduplication is
+# performed — the index accumulates all three intraday records.
+
+def _make_intraday_snap(symbol: str, ts: str, bid: float, iv: float) -> OptionSnapshot:
+    quote = OptionQuote(bid=bid, ask=bid + 0.50, bid_size=10, ask_size=10, timestamp=ts)
+    greeks = OptionGreeks(delta=0.5, gamma=0.05, theta=-0.02, vega=0.15)
+    return OptionSnapshot(symbol=symbol, latest_quote=quote, greeks=greeks, implied_volatility=iv)
+
+
+def test_build_index_deduplicates_by_symbol():
+    """build_index('by_symbol') must keep only the latest record per symbol.
+
+    FAILS today: the index stores all intraday duplicates, so get() returns 3
+    items for a symbol that was polled 3 times during the session.
+    """
+    sym = "CRWD260418C00350000"
+
+    # Three intraday polls for the same contract — latest has highest IV.
+    snapshots = [
+        _make_intraday_snap(sym, "2026-03-24T09:30:00Z", bid=10.0, iv=0.30),
+        _make_intraday_snap(sym, "2026-03-24T11:00:00Z", bid=11.0, iv=0.33),
+        _make_intraday_snap(sym, "2026-03-24T14:30:00Z", bid=12.5, iv=0.36),
+    ]
+
+    idx = BlobIndex(snapshots)
+    idx.build_index("by_symbol", key_fn=lambda s: s.symbol)
+
+    result = idx.get("by_symbol", sym)
+
+    # Expect exactly one (the latest) record per symbol.
+    assert len(result) == 1, (
+        f"Expected 1 deduplicated record for {sym}, got {len(result)}. "
+        "build_index does not deduplicate — it accumulates all intraday snapshots."
+    )
+    assert result[0].latest_quote.timestamp == "2026-03-24T14:30:00Z"
+    assert result[0].iv == 0.36
