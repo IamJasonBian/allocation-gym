@@ -1,23 +1,15 @@
-"""Netlify blob store access with lambda-based filtering and local indexes."""
+"""Blob store client with lambda-based indexing for options and market data."""
 
-from allocation_gym.blobs.client import NetlifyBlobClient
-from allocation_gym.blobs.indexes import LocalIndex
-from allocation_gym.blobs.models import (
-    Greeks,
-    MarketQuote,
-    OptionContract,
-    Predicate,
-    apply_filters,
-    parse_occ,
-)
+from allocation_gym.blobs.client import BlobClient
+from allocation_gym.blobs.index import BlobIndex
+from allocation_gym.blobs.models import OptionSnapshot, OptionGreeks, MarketQuote, OptionsChainBlob, MarketQuotesBlob
 
 __all__ = [
-    "NetlifyBlobClient",
-    "LocalIndex",
-    "Greeks",
+    "BlobClient",
+    "BlobIndex",
+    "OptionSnapshot",
+    "OptionGreeks",
     "MarketQuote",
-    "OptionContract",
-    "Predicate",
-    "apply_filters",
-    "parse_occ",
+    "OptionsChainBlob",
+    "MarketQuotesBlob",
 ]
