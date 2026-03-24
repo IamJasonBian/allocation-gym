@@ -5,7 +5,7 @@ then query them to slice by strike, expiry, greeks, moneyness, etc.
 
 Example
 -------
-    from crane_gym.blobs import BlobClient, BlobIndex
+    from allocation_gym.blobs import BlobClient, BlobIndex
 
     client = BlobClient()
     chain = client.get_options_chain("CRWD")
