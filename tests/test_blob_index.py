@@ -1,7 +1,7 @@
 """Tests for BlobIndex lambda-based filtering and indexing."""
 
-from crane_gym.blobs.models import OptionSnapshot, OptionGreeks, OptionQuote
-from crane_gym.blobs.index import BlobIndex
+from allocation_gym.blobs.models import OptionSnapshot, OptionGreeks, OptionQuote
+from allocation_gym.blobs.index import BlobIndex
 
 
 def _make_snap(
