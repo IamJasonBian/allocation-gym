@@ -35,31 +35,22 @@
 \section{Executive Summary}
 % ============================================================
 
-This report describes a simple systematic scalping strategy where a single
-long position is held at a target allocation and periodically scalped. To
-manage downside risk, puts on assets with heavy correlations against the long
-position are used to manage drawdowns.
-
-Ideally, this strategy works best when used on a single volatile position with
-known structural correlations against other assets with less trading volume.
-
-To manage costs, free cash from trades are designed as limit orders for puts
-priced with slight buffers against current momentum, recapturing some of the
-transaction costs during momentum-based crossovers. Correlations, volatility
-pricing, and take-profit targets are periodically revisited, with a focus on
-manual intraday rebalancing and risk-based sell-offs to cover strategy gaps.
+This report describes a systematic scalping strategy where a single volatile
+long position is held at a target allocation and periodically scalped against
+correlated put hedges. Free cash from scalp trades funds limit orders for puts
+priced with slight buffers against current momentum, recapturing transaction
+costs during momentum-based crossovers. Correlations, volatility pricing, and
+take-profit targets are periodically revisited, with manual intraday
+rebalancing and risk-based sell-offs to cover strategy gaps.
 
 As of March~4, 2026, this portfolio maintains a 46.1\% BTC Mini Trust
 position with \textcolor{gain}{+\$15,770} in BTC trading P\&L and
 \textcolor{gain}{+\$4,195} in options P\&L over the Feb~21--Mar~4 window.
 The BTC Mini Trust position has been held within 10\% of the target
 ${\raise.17ex\hbox{$\scriptstyle\sim$}}$50\% portfolio allocation during the
-entirety of the Dec~4, 2025 to March~4, 2026 window. This technical report
-explores the strategy using full-history backtests, correlation calculations,
-and volatility pricing methodologies.
-
-The strategy was implemented live and trading results are documented in this
-report.
+entirety of the Dec~4, 2025 to March~4, 2026 trading window. This report
+documents live trading results alongside full-history backtests, correlation
+analysis, and volatility pricing methodologies.
 
 % ============================================================
 \section{Current Positions \& Thesis}
