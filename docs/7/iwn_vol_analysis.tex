@@ -509,13 +509,13 @@ Date & Side & Type & Shares & Avg Price & Notional \\
 \end{tabular*}}
 \end{table}
 
-The engine runs scalping with spot 0.5\% for buys and --1.25\% for stop-loss
-sells and rebalances every 10 minutes with a target coverage of 20\% for
-round-trip buy/sell pairs during bear market and drawdown events. During
-sideways or bull markets, the engine runs on 3\% for both buy and sell, with
-sells used to fund puts if there is positive market momentum. For example,
-the stop loss on 03/02 (500 shares @ \$29.01) was quickly followed by
-re-entry at \$29.95--\$30.20, capturing the reversal.
+The engine scalps using two regimes. In bear markets and drawdown events, it
+places buys at +0.5\% from spot and stop-loss sells at --1.25\%, rebalancing
+every 10 minutes with a target coverage of 20\% of position size in round-trip
+pairs. In sideways or bull markets, both buy and sell limits widen to 3\%,
+with sell proceeds used to fund puts when market momentum is positive.
+For example, the stop loss on 03/02 (500 shares @ \$29.01) was quickly
+followed by re-entry at \$29.95--\$30.20, capturing the reversal.
 
 \begin{table}[H]
 \centering
