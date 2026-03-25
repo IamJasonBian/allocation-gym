@@ -426,10 +426,10 @@ volatility with a 103\% return over 2 days.
 \section{Backtest \& Performance}
 % ============================================================
 
-\subsection{Thesis Decay (398 Trading Days)}
+\subsection{Supporting Analysis (2024-07-31 to 2026-03-04)}
 
-A full-history analysis (2024-07-31 to 2026-03-04) tests whether the
-correlation thesis is stable:
+A full-history analysis across 398 trading days tests whether the
+asset correlation thesis is stable:
 
 \begin{table}[H]
 \centering
@@ -457,7 +457,7 @@ IBIT     & +0.999 & +1.000 & +0.001  & +0.999 & 0.001 \\
         (first breach: 2024-08-29).
 \end{itemize}
 
-\subsection{Strategy Backtests (399 Trading Days)}
+\subsection{Strategy Backtests (398 Trading Days)}
 
 \begin{table}[H]
 \centering
@@ -468,6 +468,7 @@ Strategy & Total Ret & Ann Ret & Ann Vol & Sharpe & Max DD & Calmar \\
 \midrule
 Baseline (current)          & +17.6\% & +10.8\% & 28.8\% & 0.22 & --28.1\% & 0.38 \\
 Path A (IBIT + SPY puts)    & +15.8\% &  +9.7\% & 29.1\% & 0.18 & --28.3\% & 0.34 \\
+Path B (BTC + GLD)          & +23.6\% & +14.4\% & 28.0\% & 0.35 & --26.8\% & 0.54 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -475,9 +476,17 @@ Path A (IBIT + SPY puts)    & +15.8\% &  +9.7\% & 29.1\% & 0.18 & --28.3\% & 0.3
 \begin{itemize}[nosep]
   \item \textbf{Path A underperforms}: 7 quarterly SPY put rolls cost
         \$4,585 without reducing max drawdown.
+  \item \textbf{Path B outperforms on paper}: adding 10\% GLD (funded by
+        trimming SPY/VOO) improves Sharpe from 0.22 to 0.35 and reduces
+        max drawdown from --28.1\% to --26.8\%. GLD's low correlation
+        with BTC ($\rho = +0.19$ at 63d) provides genuine diversification.
+        However, GLD does not hedge correlated equity drawdowns---it is a
+        macro diversifier, not a tail hedge.
   \item The \textbf{IWN put strategy} (executed in practice) is more
         targeted---buying puts only when IV $<$ RV signals cheap
-        protection, rather than rolling systematically.
+        protection, rather than rolling systematically. This approach
+        complements either baseline or Path~B allocations as a tactical
+        overlay.
 \end{itemize}
 
 \subsection{Actual Engine Performance (Feb 21 -- Mar 4, 2026)}
