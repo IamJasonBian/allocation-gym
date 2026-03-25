@@ -210,7 +210,7 @@ tenor. For the portfolio's \$84K BTC position:
 % ============================================================
 
 The following data is sourced from \textbf{option chain snapshots} captured by
-the allocation engine. These are current positions as of the March~4 report date.
+system market feeds. These are current positions as of the March~4 report date.
 
 \subsection{Options Chain Overview}
 
@@ -304,7 +304,8 @@ In the Black-Scholes framework, all options on the same underlying with the
 same expiration should have identical implied volatility regardless of strike.
 In practice, this is never observed. Instead:
 
-\begin{itemize}[nosep]
+\medskip
+\begin{itemize}[itemsep=4pt]
   \item \textbf{Equity index options} exhibit a \textit{volatility skew}
         (also called a ``smirk''): OTM puts have higher IV than ATM options,
         which in turn have higher IV than OTM calls. This reflects demand for
