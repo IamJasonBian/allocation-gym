@@ -421,30 +421,6 @@ IWN trade (\$247 strike, Mar~13 expiry) captured the continued
 volatility with a 103\% return over 2 days.
 
 
-% ============================================================
-\section{Monitoring}
-% ============================================================
-
-Ongoing signals to track for strategy calibration:
-
-\begin{itemize}[nosep]
-  \item \textbf{Implied vs.\ realized vol}: compare IWN/IWN implied vol
-        (from options chain) against 21d realized vol. When IV $>$ RV by
-        $>$20\%, puts are expensive---favor selling. When IV $<$ RV,
-        puts are cheap---favor buying.
-  \item \textbf{IV smile shape}: monitor the put-call skew and smile
-        curvature over time. A steepening skew signals increasing demand
-        for downside protection and may precede market drawdowns.
-  \item \textbf{BTC implied vol}: track Deribit DVOL or BTC options
-        skew. When BTC IV is elevated relative to IWN IV, the
-        cost advantage of IWN puts increases.
-  \item \textbf{Rolling correlation stability}: monitor 21d BTC$\leftrightarrow$IWN
-        correlation. If $\rho$ drops below $+0.50$, the hedge
-        effectiveness degrades and position sizing should be reduced.
-  \item \textbf{Term structure slope}: an inverted IV term structure
-        (near-term IV $>$ long-term IV) signals heightened near-term risk
-        and opportunities for calendar spread hedges.
-\end{itemize}
 
 % ============================================================
 \section{Backtest \& Performance}
