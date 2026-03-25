@@ -520,7 +520,9 @@ The engine runs scalping with spot 0.5\% for buys and --1.25\% for stop-loss
 sells and rebalances every 10 minutes with a target coverage of 20\% for
 round-trip buy/sell pairs during bear market and drawdown events. During
 sideways or bull markets, the engine runs on 3\% for both buy and sell, with
-sells used to fund puts if there is positive market momentum.
+sells used to fund puts if there is positive market momentum. For example,
+the stop loss on 03/02 (500 shares @ \$29.01) was quickly followed by
+re-entry at \$29.95--\$30.20, capturing the reversal.
 
 \begin{table}[H]
 \centering
@@ -545,8 +547,10 @@ Date & Side & Symbol & Strike/Exp & Qty & Price & Notional \\
 \end{table}
 
 \noindent
-The IWN \$262 put was opened on 02/26 during the equity selloff and closed
-the next day for \textcolor{gain}{+\$1,800} (57\% return). The \$247 put
+The IWN \$262 put was opened on 02/26 after the equity selloff and closed
+the next day for \textcolor{gain}{+\$1,800} (57\% return). In this case,
+the position was opened to hedge for future BTC drawdowns and closed the
+next day for a quick take-profit given theta decays. The \$247 put
 followed with \textcolor{gain}{+\$1,450} (103\% return over 2 days). The
 CRWD \$390 put captured \textcolor{gain}{+\$1,225} on the single-stock
 drawdown, while the \$367.5 roll gave back \textcolor{loss}{--\$280} as
