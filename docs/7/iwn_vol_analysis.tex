@@ -82,21 +82,54 @@ owning BTC directly. It trades on public markets during regular hours
 \end{itemize}
 
 \medskip
-\noindent\textbf{Disadvantages}: BTC Mini Trust experiences slippage during after-hours
-and pre-market trading, as the trust must track to BTC/USD with limited
-liquidity outside regular sessions. It is also difficult to rebalance and
-de-risk BTC/USD exposure over the weekend when crypto markets trade while
-equity markets are closed. Platforms such as Binance, Coinbase, and others
-offer BTC/USD futures, but at significant cost (trading fees + margin
-financing). More critically, BTC options and Deribit-style derivatives are
-\textbf{not legal in New York} at the time of execution---making equity-listed
-put hedges (IWM, SPY) the only viable options overlay for NY-based portfolios.
+\noindent\textbf{Index Weaknesses}: BTC Mini Trust experiences slippage
+during after-hours and pre-market trading, as the trust must track to
+BTC/USD with limited liquidity outside regular sessions. It is also
+difficult to rebalance and de-risk BTC/USD exposure over the weekend when
+crypto markets trade while equity markets are closed. Platforms such as
+Binance, Coinbase, and others offer BTC/USD futures, but at significant
+cost (trading fees + margin financing). More critically, BTC options and
+Deribit-style derivatives are \textbf{not legal in New York} at the time of
+execution---making equity-listed put hedges (IWM, SPY) the only viable
+options overlay for NY-based portfolios during the weekday. As of this time,
+a good hedging strategy has not been discovered for weekend use.
 
 \subsection{Rolling Return Correlations}
 
-In the midst of recent market volatility, BTC Mini Trust has exhibited strong
-correlation at a macro level with popular indices and individual stocks. We
-compute the Pearson correlation on log returns:
+In the midst of recent market volatility, BTC Mini Trust has exhibited
+strong correlations at a macro level with popular indices and individual
+stocks.
+
+During BTC sell-offs, IWM tends to sell off in tandem, making IWM puts a
+good proxy hedge for BTC drawdowns. This criteria can be summarised as:
+
+\begin{enumerate}[itemsep=4pt]
+  \item Institutional demand for IWN and IWN options are less when compared
+        to SPY puts. This simplifies the relevant macro landscape during
+        research.
+  \item As of March~4, 2026, AI-driven uncertainty increases small-cap
+        volatility; IWN serves as a strong diversified basket to simplify
+        momentum, manage drawdown events, and trade sentiment.
+\end{enumerate}
+
+Volatility pricing and signal generation for these pairs can be summarised as:
+
+\begin{enumerate}[itemsep=4pt]
+  \item BTC is a good proxy for news-events, with weekend movements
+        providing some signal for hedging targets during the weekday.
+  \item Implied and realised volatility for both tend to change frequently
+        across a 30-day window, providing good exit points for option
+        positions at fair prices.
+  \item Large drawdowns in BTC generally happen in tandem with indexes,
+        allowing puts to buffer a large portion of unrealised losses while
+        profitability is generated via scalping.
+  \item Breaks in the correlation (i.e.\ BTC increases while IWN drops, or
+        BTC drops while IWN increases) are generally manageable when BTC has
+        positive 30-day and 60-day SMAs, as the core long position
+        appreciates.
+\end{enumerate}
+
+We compute the Pearson correlation on log returns:
 \[
   \rho_{N}(t) = \frac{\sum_{i=1}^{N}(r^{A}_i - \bar{r}^{A})(r^{B}_i - \bar{r}^{B})}
   {\sqrt{\sum(r^{A}_i - \bar{r}^{A})^2}\;\sqrt{\sum(r^{B}_i - \bar{r}^{B})^2}}
@@ -118,12 +151,6 @@ EFA & +0.584 & +0.469 & +0.408 & +0.473 & +0.365 & +0.351 \\
 \bottomrule
 \end{tabular}
 \end{table}
-
-IWM (iShares Russell 2000 ETF) is the most relevant hedge candidate:
-$\rho = +0.77$ with BTC at 20d, and it has the \textbf{deepest options
-liquidity} among small-cap indices. When BTC sells off, IWM tends to sell
-off in tandem---making IWM puts a proxy hedge for BTC drawdowns at a
-fraction of the cost.
 
 % ============================================================
 \section{Realized Volatility \& Hedge Selection}
@@ -150,8 +177,11 @@ Grayscale BTC is ${\raise.17ex\hbox{$\scriptstyle\sim$}}$6$\times$ more
 volatile than SPY and ${\raise.17ex\hbox{$\scriptstyle\sim$}}$4$\times$ more
 volatile than IWM. Given the strong correlation ($\rho = +0.77$), IWM
 puts provide \textbf{correlated downside protection} at a vol-adjusted
-discount: IWM's 21.1\% vol means options are priced off a much lower
-base, while still capturing the same equity drawdown events that hit BTC.
+discount: IWM's 21.1\% vol means options are priced with lower theta decays
+than BTC. This allows IWN to capture equity drawdown events against BTC
+across longer time horizons (i.e.\ 30 days) while maintaining similar spot
+movements as QQQ and SPY without covariance against other larger macro
+events.
 
 % ============================================================
 \section{Put Cost Comparison}
