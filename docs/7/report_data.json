@@ -1,0 +1,98 @@
+{
+  "early_date": "2026-03-04",
+  "latest_date": "2026-03-25",
+  "price_early": 197.8185625,
+  "price_latest": 197.8042205882353,
+  "smile_early": {
+    "atm_iv": 0.24125000000000002,
+    "call_avg_iv": 0.257475,
+    "put_avg_iv": 0.34385185185185185,
+    "put_call_skew": 0.08637685185185184,
+    "n_contracts": 100,
+    "n_with_iv": 75,
+    "iv_by_moneyness": {
+      "Deep OTM Put": 0.36336,
+      "OTM Put": 0.30165806451612903,
+      "ATM": 0.24725185185185183,
+      "OTM Call": 0.237825,
+      "Deep OTM Call": 0.47405
+    }
+  },
+  "smile_latest": {
+    "atm_iv": 0.24125000000000002,
+    "call_avg_iv": 0.257475,
+    "put_avg_iv": 0.34649310344827583,
+    "put_call_skew": 0.08901810344827582,
+    "n_contracts": 102,
+    "n_with_iv": 77,
+    "iv_by_moneyness": {
+      "Deep OTM Put": 0.36872857142857146,
+      "OTM Put": 0.30165806451612903,
+      "ATM": 0.24725185185185183,
+      "OTM Call": 0.237825,
+      "Deep OTM Call": 0.47405
+    }
+  },
+  "expiry_early": [
+    {
+      "expiry": "2026-03-20",
+      "n_contracts": 53,
+      "avg_iv": 0.31309811320754716,
+      "min_iv": 0.2077,
+      "max_iv": 0.5247,
+      "n_calls": 26,
+      "n_puts": 27
+    },
+    {
+      "expiry": "2026-04-17",
+      "n_contracts": 22,
+      "avg_iv": 0.22948181818181815,
+      "min_iv": 0.1929,
+      "max_iv": 0.2799,
+      "n_calls": 22,
+      "n_puts": 0
+    }
+  ],
+  "expiry_latest": [
+    {
+      "expiry": "2026-03-20",
+      "n_contracts": 53,
+      "avg_iv": 0.31309811320754716,
+      "min_iv": 0.2077,
+      "max_iv": 0.5247,
+      "n_calls": 26,
+      "n_puts": 27
+    },
+    {
+      "expiry": "2026-04-17",
+      "n_contracts": 24,
+      "avg_iv": 0.24220416666666666,
+      "min_iv": 0.1929,
+      "max_iv": 0.3952,
+      "n_calls": 22,
+      "n_puts": 2
+    }
+  ],
+  "greeks_early": {
+    "atm_call_delta": 0.5575923076923077,
+    "atm_call_gamma": 0.03386153846153846,
+    "atm_call_theta": -0.0976153846153846,
+    "atm_call_vega": 0.21910769230769228,
+    "atm_put_delta": -0.44227142857142854,
+    "atm_put_gamma": 0.033042857142857145,
+    "atm_put_theta": -0.13461428571428571,
+    "atm_put_vega": 0.16152857142857144,
+    "n_atm": 20
+  },
+  "greeks_latest": {
+    "atm_call_delta": 0.5575923076923077,
+    "atm_call_gamma": 0.03386153846153846,
+    "atm_call_theta": -0.0976153846153846,
+    "atm_call_vega": 0.21910769230769228,
+    "atm_put_delta": -0.44227142857142854,
+    "atm_put_gamma": 0.033042857142857145,
+    "atm_put_theta": -0.13461428571428571,
+    "atm_put_vega": 0.16152857142857144,
+    "n_atm": 20
+  }
+}

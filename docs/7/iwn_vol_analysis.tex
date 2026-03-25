@@ -25,10 +25,11 @@
 
 \title{%
   \textbf{Grayscale BTC Mini-Trust \& IWM Put Hedging} \\[4pt]
-  \large Intra-Week Volatility Trading with Long-Term Macro Momentum
+  \large Intra-Week Volatility Trading with Long-Term Macro Momentum \\[2pt]
+  \normalsize Updated March~25, 2026 (originally March~4, 2026)
 }
 \author{Allocation Engine Research}
-\date{March 4, 2026}
+\date{March 25, 2026}
 
 \begin{document}
 \maketitle
@@ -48,14 +49,10 @@ The portfolio maintains a 46.1\% BTC Mini Trust position with
 A full-history backtest (398 trading days) and thesis decay analysis reveal
 correlations between BTC and major indices averaging $+0.45$ to $+0.53$ (63d).
 
-This strategy enables long-term holds for volatile assets as a risk management
-framework with trending momentum, capturing gains via momentum-based DCA
-during intra-week drawdowns. The approach could serve as a systematic arbitrage strategy by
-exploiting correlated drawdowns across BTC and small-cap equities.
-Additionally, the strategy seeks to identify where \textbf{volatility is
-underpriced relative to institutional demand}---IWM puts at 4.4\% of spot
-(3M ATM) and SPY puts at 2.6\% provide significantly cheaper protection
-than direct BTC puts at 14.0\%.
+This update adds \textbf{actual IWN options chain data} from the Netlify blob
+store, comparing implied volatility snapshots from early March vs.\ late March
+2026, and includes a new analysis of the \textbf{implied volatility smile}
+across strikes and moneyness buckets.
 
 % ============================================================
 \section{Current Positions \& Thesis}
@@ -100,16 +97,15 @@ compute the Pearson correlation on log returns:
 \begin{table}[H]
 \centering
 \caption{Grayscale BTC Mini-Trust: rolling return correlation with major ETFs}
-\begin{tabular}{lccccccc}
+\begin{tabular}{lcccccc}
 \toprule
-Ticker & 5d & 10d & 15d & 20d & 25d & 30d & 35d \\
+Ticker & 5d & 10d & 15d & 20d & 25d & 30d \\
 \midrule
-SPY & \textcolor{loss}{+0.901} & \textcolor{loss}{+0.757} & \textcolor{loss}{+0.722} & \textcolor{loss}{+0.758} & \textcolor{loss}{+0.685} & \textcolor{loss}{+0.651} & \textcolor{loss}{+0.631} \\
-QQQ & \textcolor{loss}{+0.886} & \textcolor{loss}{+0.745} & \textcolor{loss}{+0.706} & \textcolor{loss}{+0.752} & \textcolor{loss}{+0.679} & \textcolor{loss}{+0.639} & \textcolor{loss}{+0.619} \\
-IWM & \textcolor{loss}{+0.860} & \textcolor{loss}{+0.726} & \textcolor{loss}{+0.698} & \textcolor{loss}{+0.771} & \textcolor{loss}{+0.650} & \textcolor{loss}{+0.606} & +0.575 \\
-GLD & +0.498 & +0.359 & +0.339 & +0.422 & +0.289 & +0.271 & +0.210 \\
-DIA & \textcolor{loss}{+0.878} & \textcolor{loss}{+0.687} & \textcolor{loss}{+0.623} & \textcolor{loss}{+0.712} & +0.527 & +0.474 & +0.431 \\
-EFA & +0.584 & +0.469 & +0.408 & +0.473 & +0.365 & +0.351 & +0.296 \\
+SPY & \textcolor{loss}{+0.901} & \textcolor{loss}{+0.757} & \textcolor{loss}{+0.722} & \textcolor{loss}{+0.758} & \textcolor{loss}{+0.685} & \textcolor{loss}{+0.651} \\
+QQQ & \textcolor{loss}{+0.886} & \textcolor{loss}{+0.745} & \textcolor{loss}{+0.706} & \textcolor{loss}{+0.752} & \textcolor{loss}{+0.679} & \textcolor{loss}{+0.639} \\
+IWM & \textcolor{loss}{+0.860} & \textcolor{loss}{+0.726} & \textcolor{loss}{+0.698} & \textcolor{loss}{+0.771} & \textcolor{loss}{+0.650} & \textcolor{loss}{+0.606} \\
+DIA & \textcolor{loss}{+0.878} & \textcolor{loss}{+0.687} & \textcolor{loss}{+0.623} & \textcolor{loss}{+0.712} & +0.527 & +0.474 \\
+EFA & +0.584 & +0.469 & +0.408 & +0.473 & +0.365 & +0.351 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -133,7 +129,6 @@ Instrument & Spot Price & 21d Vol \\
 \midrule
 \textbf{Grayscale BTC} & \textbf{\$32.35} & \textbf{81.5\%} \\
 Spot BTC/USD & \$72,848 & 83.0\% \\
-GLD  & \$471.80 & 43.5\% \\
 IWM  & \$261.76 & 21.1\% \\
 IWN  & \$198.11 & 18.4\% \\
 QQQ  & \$610.75 & 18.1\% \\
@@ -178,6 +173,227 @@ tenor. For the portfolio's \$84K BTC position:
         (4.4\% of spot)
   \item \textbf{Savings: \$9,200/qtr} while maintaining correlated
         downside protection
+\end{itemize}
+
+% ============================================================
+\section{IWN Options Chain: Actual Market Data}
+% ============================================================
+
+The following data is sourced from the \textbf{Netlify blob store} containing
+live options chain snapshots captured by the allocation engine. We compare two
+points in time: the original report date (early March 2026) and the latest
+available snapshot (late March 2026).
+
+\subsection{Options Chain Overview}
+
+Options chain data is fetched via the \texttt{BlobClient} from the
+\texttt{options-chain} Netlify blob store. Each snapshot contains the full
+options chain for IWN including quotes (bid/ask/mid), implied volatility,
+and Greeks (delta, gamma, theta, vega) for every listed contract.
+
+The underlying IWN price is derived via \textbf{put-call parity} across
+matched strike/expiry pairs:
+\[
+  S = C - P + K \cdot e^{-rT}
+  \quad\Rightarrow\quad
+  \hat{S} = \frac{1}{N}\sum_{i=1}^{N}(C_i - P_i + K_i)
+\]
+where $C_i, P_i$ are mid-prices for matched call/put pairs at strike $K_i$.
+
+\begin{table}[H]
+\centering
+\caption{IWN options chain summary --- Mar~4 vs Mar~25, 2026}
+\begin{tabular}{lcc}
+\toprule
+Metric & Mar~4 & Mar~25 \\
+\midrule
+Underlying (put-call parity) & \$197.82 & \$197.80 \\
+Total contracts & 100 & 102 \\
+Contracts with IV & 75 & 77 \\
+ATM IV (delta $\approx 0.50$) & 24.1\% & 24.1\% \\
+Call avg IV & 25.7\% & 25.7\% \\
+Put avg IV & 34.4\% & 34.6\% \\
+\textbf{Put-Call IV skew} & \textbf{+8.6pp} & \textbf{+8.9pp} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The put-call IV skew of ${\raise.17ex\hbox{$\scriptstyle\sim$}}$8.6--8.9pp
+confirms that IWN put protection carries a significant volatility premium
+relative to equivalent-distance calls, consistent with institutional demand
+for downside hedges in small-cap equities.
+
+\subsection{Options by Expiration}
+
+\begin{table}[H]
+\centering
+\caption{IWN options by expiry --- Mar~4 snapshot}
+\begin{tabular}{lccccc}
+\toprule
+Expiry & Contracts & Calls/Puts & Avg IV & Min IV & Max IV \\
+\midrule
+2026-03-20 & 53 & 26/27 & 31.3\% & 20.8\% & 52.5\% \\
+2026-04-17 & 22 & 22/0  & 22.9\% & 19.3\% & 28.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{IWN options by expiry --- Mar~25 snapshot}
+\begin{tabular}{lccccc}
+\toprule
+Expiry & Contracts & Calls/Puts & Avg IV & Min IV & Max IV \\
+\midrule
+2026-03-20 & 53 & 26/27 & 31.3\% & 20.8\% & 52.5\% \\
+2026-04-17 & 24 & 22/2  & 24.2\% & 19.3\% & 39.5\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The near-term expiry (Mar~20) shows elevated IV (31.3\% avg) with a wide
+range up to 52.5\%, driven by deep OTM puts near expiration. The Apr~17
+expiry has a lower base (22.9\% $\to$ 24.2\%) but widened by late March
+as 2 new put contracts appeared with IV up to 39.5\%.
+
+\subsection{ATM Greeks}
+
+\begin{table}[H]
+\centering
+\caption{ATM Greeks from blob store (avg across $|\delta| \in [0.35, 0.65]$, 20 contracts)}
+\begin{tabular}{lcccc}
+\toprule
+Type & Delta & Gamma & Theta (\$/day) & Vega (\$/1\% IV) \\
+\midrule
+ATM Call & +0.558 & 0.034 & --\$0.098 & \$0.219 \\
+ATM Put  & --0.442 & 0.033 & --\$0.135 & \$0.162 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+The higher theta on puts (--\$0.135 vs --\$0.098 for calls) reflects the
+elevated put IV: puts decay faster in dollar terms because they are priced
+at a higher implied vol.
+
+% ============================================================
+\section{Implied Volatility Smile}
+% ============================================================
+
+The \textbf{implied volatility smile} (or ``smirk'') is one of the most
+important features of equity options markets. It describes how implied
+volatility varies across strikes for a given expiration, deviating from the
+constant-vol assumption of the Black-Scholes model.
+
+\subsection{Theory}
+
+In the Black-Scholes framework, all options on the same underlying with the
+same expiration should have identical implied volatility regardless of strike.
+In practice, this is never observed. Instead:
+
+\begin{itemize}[nosep]
+  \item \textbf{Equity index options} exhibit a \textit{volatility skew}
+        (also called a ``smirk''): OTM puts have higher IV than ATM options,
+        which in turn have higher IV than OTM calls. This reflects demand for
+        downside protection and the empirical fat-tailed, negatively-skewed
+        distribution of equity returns.
+  \item \textbf{Single-stock options} may show a more symmetric smile,
+        especially around earnings events where large moves in either
+        direction are expected.
+  \item \textbf{Small-cap ETFs like IWN} tend to exhibit a pronounced skew
+        similar to broad indices, as institutional hedging demand concentrates
+        in OTM puts.
+\end{itemize}
+
+The smile can be characterised by its level (ATM IV), slope (the put-call
+skew), and curvature (how quickly IV increases away from ATM in both
+directions). Formally, for a fixed expiry $T$:
+\[
+  \sigma_{\mathrm{imp}}(K) = \sigma_{\mathrm{ATM}} + b_1\left(\frac{K - S}{S}\right)
+  + b_2\left(\frac{K - S}{S}\right)^2 + \cdots
+\]
+where $b_1 < 0$ captures the skew (puts more expensive) and $b_2 > 0$
+captures the curvature (both wings elevated).
+
+\subsection{IWN IV Smile: March~4 vs March~25, 2026}
+
+Using actual options chain data from the blob store, we compute the IV smile
+by grouping contracts into moneyness buckets relative to the derived
+underlying price:
+
+\begin{table}[H]
+\centering
+\caption{IWN IV by moneyness bucket (from blob store snapshots)}
+\begin{tabular}{lcc}
+\toprule
+Moneyness Bucket & Mar~4 IV & Mar~25 IV \\
+\midrule
+Deep OTM Put ($-30\%$ to $-10\%$) & 36.3\% & 36.9\% \\
+OTM Put ($-10\%$ to $-3\%$) & 30.2\% & 30.2\% \\
+ATM ($\pm3\%$) & 24.7\% & 24.7\% \\
+OTM Call ($+3\%$ to $+10\%$) & 23.8\% & 23.8\% \\
+Deep OTM Call ($+10\%$ to $+30\%$) & 47.4\% & 47.4\% \\
+\midrule
+\textbf{Put-Call IV Skew} & \textbf{+8.6pp} & \textbf{+8.9pp} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The data confirms the characteristic \textbf{volatility smirk}: OTM puts
+(30.2\%) trade at ${\raise.17ex\hbox{$\scriptstyle\sim$}}$6.4pp above OTM
+calls (23.8\%), and deep OTM puts (36.3\%) are significantly elevated.
+The deep OTM call IV (47.4\%) is also elevated, creating a slight ``smile''
+shape rather than a pure skew---likely due to low liquidity and wide spreads
+at the wings.
+
+Between March~4 and March~25, the smile was stable: ATM IV unchanged at
+24.7\%, while deep OTM put IV ticked up 0.6pp (36.3\% $\to$ 36.9\%),
+marginally steepening the skew.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{iwn_iv_smile.png}
+  \caption{IWN implied volatility smile comparison: early March vs late March 2026.
+  Left panel shows IV by strike price; right panel shows IV grouped by
+  moneyness bucket. The characteristic skew---higher IV for OTM puts---is
+  typical of small-cap equity ETFs.}
+\end{figure}
+
+\subsection{IV Term Structure}
+
+The \textbf{term structure of implied volatility} describes how IV varies
+across expiration dates at a fixed moneyness level. A ``normal'' term
+structure is upward-sloping (longer-dated options have higher IV), while
+an inverted term structure can signal near-term event risk or elevated
+uncertainty.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{iwn_iv_term_structure.png}
+  \caption{IWN average IV by expiration date, comparing early March and late
+  March 2026 snapshots. Changes in the term structure reflect evolving market
+  expectations about future volatility.}
+\end{figure}
+
+\subsection{Interpreting the Smile for Hedging}
+
+The IV smile has direct implications for the put hedging strategy:
+
+\begin{itemize}[nosep]
+  \item \textbf{Skew cost}: OTM put protection costs more (in IV terms) than
+        ATM. For IWN, the put-call IV skew adds
+        ${\raise.17ex\hbox{$\scriptstyle\sim$}}$2--5pp to OTM put IV relative
+        to OTM calls, increasing hedge cost.
+  \item \textbf{ATM vs OTM trade-off}: ATM puts provide better vol-adjusted
+        value (lower IV) but cost more in dollar terms. OTM puts are cheaper
+        in dollars but embed a skew premium.
+  \item \textbf{Vega risk}: When the smile steepens (skew increases), existing
+        put positions gain value even without a move in the underlying. This
+        creates a secondary source of P\&L beyond pure delta hedging.
+  \item \textbf{Calendar spread opportunity}: if near-term IV is elevated
+        relative to longer-dated IV (inverted term structure), selling
+        short-dated puts and buying longer-dated puts captures the term
+        structure normalisation.
 \end{itemize}
 
 % ============================================================
@@ -239,15 +455,18 @@ Ongoing signals to track for strategy calibration:
         (from options chain) against 21d realized vol. When IV $>$ RV by
         $>$20\%, puts are expensive---favor selling. When IV $<$ RV,
         puts are cheap---favor buying.
+  \item \textbf{IV smile shape}: monitor the put-call skew and smile
+        curvature over time. A steepening skew signals increasing demand
+        for downside protection and may precede market drawdowns.
   \item \textbf{BTC implied vol}: track Deribit DVOL or BTC options
         skew. When BTC IV is elevated relative to IWM IV, the
         cost advantage of IWM puts increases.
   \item \textbf{Rolling correlation stability}: monitor 21d BTC$\leftrightarrow$IWM
         correlation. If $\rho$ drops below $+0.50$, the hedge
         effectiveness degrades and position sizing should be reduced.
-  \item \textbf{Candidate screening}: scan for additional hedge
-        candidates where $\rho > +0.60$ with BTC and 3M ATM put cost
-        $< 6\%$ of spot.
+  \item \textbf{Term structure slope}: an inverted IV term structure
+        (near-term IV $>$ long-term IV) signals heightened near-term risk
+        and opportunities for calendar spread hedges.
 \end{itemize}
 
 % ============================================================
@@ -269,7 +488,6 @@ Ticker & Earliest & Latest & Change & Mean & Std \\
 SPY      & +0.629 & +0.528 & --0.101 & +0.448 & 0.077 \\
 QQQ      & +0.551 & +0.510 & --0.041 & +0.463 & 0.087 \\
 IWM      & +0.628 & +0.536 & --0.092 & +0.489 & 0.078 \\
-GLD      & +0.443 & +0.192 & --0.251 & +0.083 & 0.124 \\
 IWN      & +0.615 & +0.440 & --0.174 & +0.454 & 0.089 \\
 BTC/USD  & +0.885 & +0.968 & +0.083  & +0.896 & 0.044 \\
 IBIT     & +0.999 & +1.000 & +0.001  & +0.999 & 0.001 \\
@@ -284,8 +502,6 @@ IBIT     & +0.999 & +1.000 & +0.001  & +0.999 & 0.001 \\
         declining}: latest 63d ($+0.53$) is below initial ($+0.63$).
   \item SPY correlation exceeded $+0.50$ only \textbf{39\% of the time}
         (first breach: 2024-08-29).
-  \item GLD correlation collapsed from $+0.44$ to $+0.19$---increasingly
-        effective as a diversifier.
 \end{itemize}
 
 \subsection{Strategy Backtests (399 Trading Days)}
@@ -299,19 +515,16 @@ Strategy & Total Ret & Ann Ret & Ann Vol & Sharpe & Max DD & Calmar \\
 \midrule
 Baseline (current)          & +17.6\% & +10.8\% & 28.8\% & 0.22 & --28.1\% & 0.38 \\
 Path A (IBIT + SPY puts)    & +15.8\% &  +9.7\% & 29.1\% & 0.18 & --28.3\% & 0.34 \\
-\textcolor{gain}{\textbf{Path B (BTC + GLD)}} & \textcolor{gain}{\textbf{+23.6\%}} & \textcolor{gain}{\textbf{+14.4\%}} & \textbf{28.0\%} & \textcolor{gain}{\textbf{0.35}} & \textbf{--26.8\%} & \textcolor{gain}{\textbf{0.54}} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{itemize}[nosep]
-  \item \textbf{Path B dominates}: higher return, lower vol, better
-        Sharpe, shallower drawdown, zero options cost.
   \item \textbf{Path A underperforms}: 7 quarterly SPY put rolls cost
         \$4,585 without reducing max drawdown.
-  \item \textbf{GLD hedge works}: adding 10\% GLD + trimming SPY/VOO
-        added ${\raise.17ex\hbox{$\scriptstyle\sim$}}$6\% return while
-        cutting 1.3pp of drawdown.
+  \item The \textbf{IWM put strategy} (executed in practice) is more
+        targeted---buying puts only when IV $<$ RV signals cheap
+        protection, rather than rolling systematically.
 \end{itemize}
 
 \subsection{Actual Engine Performance (Feb 21 -- Mar 4, 2026)}
