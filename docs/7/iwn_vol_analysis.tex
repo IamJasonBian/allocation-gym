@@ -151,29 +151,31 @@ EFA & +0.584 & +0.469 & +0.408 & +0.473 & +0.365 & +0.351 \\
 \begin{table}[H]
 \centering
 \caption{Annualized realized volatility comparison (21-day window)}
-\begin{tabular}{lcc}
+\begin{tabular}{lcccc}
 \toprule
-Instrument & Spot Price & 21d Vol \\
+Instrument & Spot Price & 21d Vol & Avg Weekly $|\Delta\%|$ & Max Weekly $|\Delta\%|$ \\
 \midrule
-\textbf{Grayscale BTC} & \textbf{\$32.35} & \textbf{81.5\%} \\
-Spot BTC/USD & \$72,848 & 83.0\% \\
-IWN  & \$261.76 & 21.1\% \\
-IWN  & \$198.11 & 18.4\% \\
-QQQ  & \$610.75 & 18.1\% \\
-SPY  & \$685.13 & 13.0\% \\
+\textbf{Grayscale BTC} & \textbf{\$31.34} & \textbf{81.5\%} & \textbf{4.37\%} & \textbf{19.41\%} \\
+Spot BTC/USD & \$71,179 & 83.0\% & 4.63\% & 17.07\% \\
+IWM  & \$251.82 & 21.1\% & 2.22\% & 9.61\% \\
+IWN  & \$191.20 & 18.4\% & 2.20\% & 9.34\% \\
+QQQ  & \$587.82 & 18.1\% & 2.05\% & 9.73\% \\
+SPY  & \$656.82 & 13.0\% & 1.57\% & 9.07\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Grayscale BTC is ${\raise.17ex\hbox{$\scriptstyle\sim$}}$6$\times$ more
 volatile than SPY and ${\raise.17ex\hbox{$\scriptstyle\sim$}}$4$\times$ more
-volatile than IWN. Given the strong correlation ($\rho = +0.77$), IWN
-puts provide \textbf{correlated downside protection} at a vol-adjusted
-discount: IWN's 21.1\% vol means options are priced with lower theta decays
-than BTC. This allows IWN to capture equity drawdown events against BTC
-across longer time horizons (i.e.\ 30 days) while maintaining similar spot
-movements as QQQ and SPY without covariance against other larger macro
-events.
+volatile than IWN. IWN offers more exposure for weekly momentum (2.20\% avg
+weekly move) while maintaining similar max drawdowns as QQQ (9.73\%) and SPY
+(9.07\%). We use IWN rather than IWM as IWN has more trading volume in its
+options chain. Given the strong correlation ($\rho = +0.77$), IWN puts
+provide \textbf{correlated downside protection} at a vol-adjusted discount:
+IWN's 18.4\% vol means options are priced with lower theta decays than BTC.
+This allows IWN to capture equity drawdown events against BTC across longer
+time horizons (i.e.\ 30 days) while maintaining similar spot movements as
+QQQ and SPY without covariance against other larger macro events.
 
 % ============================================================
 \section{Put Cost Comparison}
