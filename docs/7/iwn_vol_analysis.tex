@@ -218,17 +218,14 @@ tenor. For the portfolio's \$84K BTC position:
 \section{IWN Options Chain: Actual Market Data}
 % ============================================================
 
-The following data is sourced from the \textbf{Netlify blob store} containing
-live options chain snapshots captured by the allocation engine. We compare two
-points in time: the original report date (early March 2026) and the latest
-available snapshot (late March 2026).
+The following data is sourced from \textbf{option chain snapshots} captured by
+the allocation engine. These are current positions as of the March~4 report date.
 
 \subsection{Options Chain Overview}
 
-Options chain data is fetched via the \texttt{BlobClient} from the
-\texttt{options-chain} Netlify blob store. Each snapshot contains the full
-options chain for IWN including quotes (bid/ask/mid), implied volatility,
-and Greeks (delta, gamma, theta, vega) for every listed contract.
+Each option chain snapshot contains the full options chain for IWN including
+quotes (bid/ask/mid), implied volatility, and Greeks (delta, gamma, theta,
+vega) for every listed contract.
 
 The underlying IWN price is derived via \textbf{put-call parity} across
 matched strike/expiry pairs:
@@ -241,23 +238,23 @@ where $C_i, P_i$ are mid-prices for matched call/put pairs at strike $K_i$.
 
 \begin{table}[H]
 \centering
-\caption{IWN options chain summary --- Mar~4 vs Mar~25, 2026}
-\begin{tabular}{lcc}
+\caption{IWN options chain summary --- March~4, 2026}
+\begin{tabular}{lc}
 \toprule
-Metric & Mar~4 & Mar~25 \\
+Metric & Mar~4 \\
 \midrule
-Underlying (put-call parity) & \$197.82 & \$197.80 \\
-Total contracts & 100 & 102 \\
-Contracts with IV & 75 & 77 \\
-ATM IV (delta $\approx 0.50$) & 24.1\% & 24.1\% \\
-Call avg IV & 25.7\% & 25.7\% \\
-Put avg IV & 34.4\% & 34.6\% \\
-\textbf{Put-Call IV skew} & \textbf{+8.6pp} & \textbf{+8.9pp} \\
+Underlying (put-call parity) & \$197.82 \\
+Total contracts & 100 \\
+Contracts with IV & 75 \\
+ATM IV (delta $\approx 0.50$) & 24.1\% \\
+Call avg IV & 25.7\% \\
+Put avg IV & 34.4\% \\
+\textbf{Put-Call IV skew} & \textbf{+8.6pp} \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The put-call IV skew of ${\raise.17ex\hbox{$\scriptstyle\sim$}}$8.6--8.9pp
+The put-call IV skew of ${\raise.17ex\hbox{$\scriptstyle\sim$}}$8.6pp
 confirms that IWN put protection carries a significant volatility premium
 relative to equivalent-distance calls, consistent with institutional demand
 for downside hedges in small-cap equities.
@@ -277,29 +274,15 @@ Expiry & Contracts & Calls/Puts & Avg IV & Min IV & Max IV \\
 \end{tabular}
 \end{table}
 
-\begin{table}[H]
-\centering
-\caption{IWN options by expiry --- Mar~25 snapshot}
-\begin{tabular}{lccccc}
-\toprule
-Expiry & Contracts & Calls/Puts & Avg IV & Min IV & Max IV \\
-\midrule
-2026-03-20 & 53 & 26/27 & 31.3\% & 20.8\% & 52.5\% \\
-2026-04-17 & 24 & 22/2  & 24.2\% & 19.3\% & 39.5\% \\
-\bottomrule
-\end{tabular}
-\end{table}
-
 The near-term expiry (Mar~20) shows elevated IV (31.3\% avg) with a wide
 range up to 52.5\%, driven by deep OTM puts near expiration. The Apr~17
-expiry has a lower base (22.9\% $\to$ 24.2\%) but widened by late March
-as 2 new put contracts appeared with IV up to 39.5\%.
+expiry has a lower base of 22.9\%.
 
 \subsection{ATM Greeks}
 
 \begin{table}[H]
 \centering
-\caption{ATM Greeks from blob store (avg across $|\delta| \in [0.35, 0.65]$, 20 contracts)}
+\caption{ATM Greeks (avg across $|\delta| \in [0.35, 0.65]$, 20 contracts)}
 \begin{tabular}{lcccc}
 \toprule
 Type & Delta & Gamma & Theta (\$/day) & Vega (\$/1\% IV) \\
@@ -354,26 +337,25 @@ directions). Formally, for a fixed expiry $T$:
 where $b_1 < 0$ captures the skew (puts more expensive) and $b_2 > 0$
 captures the curvature (both wings elevated).
 
-\subsection{IWN IV Smile: March~4 vs March~25, 2026}
+\subsection{IWN IV Smile: March~4, 2026}
 
-Using actual options chain data from the blob store, we compute the IV smile
-by grouping contracts into moneyness buckets relative to the derived
-underlying price:
+Using actual option chain snapshots, we compute the IV smile by grouping
+contracts into moneyness buckets relative to the derived underlying price:
 
 \begin{table}[H]
 \centering
-\caption{IWN IV by moneyness bucket (from blob store snapshots)}
-\begin{tabular}{lcc}
+\caption{IWN IV by moneyness bucket (March~4, 2026)}
+\begin{tabular}{lc}
 \toprule
-Moneyness Bucket & Mar~4 IV & Mar~25 IV \\
+Moneyness Bucket & IV \\
 \midrule
-Deep OTM Put ($-30\%$ to $-10\%$) & 36.3\% & 36.9\% \\
-OTM Put ($-10\%$ to $-3\%$) & 30.2\% & 30.2\% \\
-ATM ($\pm3\%$) & 24.7\% & 24.7\% \\
-OTM Call ($+3\%$ to $+10\%$) & 23.8\% & 23.8\% \\
-Deep OTM Call ($+10\%$ to $+30\%$) & 47.4\% & 47.4\% \\
+Deep OTM Put ($-30\%$ to $-10\%$) & 36.3\% \\
+OTM Put ($-10\%$ to $-3\%$) & 30.2\% \\
+ATM ($\pm3\%$) & 24.7\% \\
+OTM Call ($+3\%$ to $+10\%$) & 23.8\% \\
+Deep OTM Call ($+10\%$ to $+30\%$) & 47.4\% \\
 \midrule
-\textbf{Put-Call IV Skew} & \textbf{+8.6pp} & \textbf{+8.9pp} \\
+\textbf{Put-Call IV Skew} & \textbf{+8.6pp} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -384,35 +366,6 @@ calls (23.8\%), and deep OTM puts (36.3\%) are significantly elevated.
 The deep OTM call IV (47.4\%) is also elevated, creating a slight ``smile''
 shape rather than a pure skew---likely due to low liquidity and wide spreads
 at the wings.
-
-Between March~4 and March~25, the smile was stable: ATM IV unchanged at
-24.7\%, while deep OTM put IV ticked up 0.6pp (36.3\% $\to$ 36.9\%),
-marginally steepening the skew.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.95\textwidth]{iwn_iv_smile.png}
-  \caption{IWN implied volatility smile comparison: early March vs late March 2026.
-  Left panel shows IV by strike price; right panel shows IV grouped by
-  moneyness bucket. The characteristic skew---higher IV for OTM puts---is
-  typical of small-cap equity ETFs.}
-\end{figure}
-
-\subsection{IV Term Structure}
-
-The \textbf{term structure of implied volatility} describes how IV varies
-across expiration dates at a fixed moneyness level. A ``normal'' term
-structure is upward-sloping (longer-dated options have higher IV), while
-an inverted term structure can signal near-term event risk or elevated
-uncertainty.
-
-\begin{figure}[H]
-  \centering
-  \includegraphics[width=0.85\textwidth]{iwn_iv_term_structure.png}
-  \caption{IWN average IV by expiration date, comparing early March and late
-  March 2026 snapshots. Changes in the term structure reflect evolving market
-  expectations about future volatility.}
-\end{figure}
 
 \subsection{Interpreting the Smile for Hedging}
 
@@ -655,7 +608,7 @@ Open orders & BUY 522 BTC @ \$31.66 / SELL 522 @ \$31.70 \\
 \noindent\textbf{Change Log} \\[2pt]
 \begin{tabular}{@{}ll}
 March 4, 2026  & Original report \\
-March 25, 2026 & Added actual IWN options chain data from blob store; \\
+March 25, 2026 & Added actual IWN options chain data from option chain snapshots; \\
                & added IV smile analysis section with moneyness buckets; \\
                & added options BUY/SELL fills to engine performance; \\
                & removed GLD section; regenerated PDF \\

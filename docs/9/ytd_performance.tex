@@ -134,8 +134,8 @@ trading P\&L on round-trip volume.
 \toprule
 Contract & Qty & Dates & Open & Close & P\&L & Return \\
 \midrule
-IWM \$262 Put 3/11 & 10 & 02/26 $\to$ 02/27 & \$3.16 & \$4.96 & \textcolor{gain}{+\$1,800} & +57\% \\
-IWM \$247 Put 3/13 & 10 & 02/27 $\to$ 03/01 & \$1.41 & \$2.86 & \textcolor{gain}{+\$1,450} & +103\% \\
+IWN \$262 Put 3/11 & 10 & 02/26 $\to$ 02/27 & \$3.16 & \$4.96 & \textcolor{gain}{+\$1,800} & +57\% \\
+IWN \$247 Put 3/13 & 10 & 02/27 $\to$ 03/01 & \$1.41 & \$2.86 & \textcolor{gain}{+\$1,450} & +103\% \\
 CRWD \$390 Put 3/06 & 1 & 02/25 $\to$ 02/27 & \$21.05 & \$33.30 & \textcolor{gain}{+\$1,225} & +58\% \\
 CRWD \$367.5 Put 3/20 & 1 & 02/27 $\to$ 03/04 & \$19.05 & \$16.25 & \textcolor{loss}{--\$280} & --15\% \\
 \midrule
@@ -154,7 +154,7 @@ CRWD \$367.5 Put 3/20 & 1 & 02/27 $\to$ 03/04 & \$19.05 & \$16.25 & \textcolor{l
 Source & P\&L \\
 \midrule
 BTC bracket trading     & \textcolor{gain}{+\$15,770} \\
-IWM put round-trips     & \textcolor{gain}{+\$3,250} \\
+IWN put round-trips     & \textcolor{gain}{+\$3,250} \\
 CRWD put round-trips    & \textcolor{gain}{+\$945} \\
 \midrule
 \textbf{Total}        & \textcolor{gain}{\textbf{+\$19,965}} \\
@@ -171,6 +171,15 @@ the period, ranging from 24.1\% to 34.8\%. This level is
 consistent with the 21-day realised vol of 18.4\% reported in the main
 strategy document, suggesting options are \textbf{fairly priced} relative
 to realised moves.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{../7/iwn_iv_smile.png}
+  \caption{IWN implied volatility smile: early March vs late March 2026.
+  Left panel shows IV by strike price; right panel shows IV grouped by
+  moneyness bucket. The characteristic skew---higher IV for OTM puts---is
+  typical of small-cap equity ETFs.}
+\end{figure}
 
 Key observations:
 \begin{itemize}[nosep]
