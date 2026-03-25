@@ -19,17 +19,13 @@
 
 \pagestyle{fancy}
 \fancyhf{}
-\rhead{Allocation Engine --- Internal}
-\lhead{BTC Mini-Trust \& IWM Put Strategy}
 \rfoot{\thepage}
 
 \title{%
-  \textbf{Grayscale BTC Mini-Trust \& IWM Put Hedging} \\[4pt]
-  \large Intra-Week Volatility Trading with Long-Term Macro Momentum \\[2pt]
-  \normalsize Updated March~25, 2026 (originally March~4, 2026)
+  \textbf{Volatility Scalping with Static Positions} \\[4pt]
+  \large Grayscale BTC Mini-Trust \& IWM Puts
 }
-\author{Allocation Engine Research}
-\date{March 25, 2026}
+\date{March 4, 2026}
 
 \begin{document}
 \maketitle
@@ -39,20 +35,31 @@
 \section{Executive Summary}
 % ============================================================
 
-This report summarizes using \textbf{Grayscale BTC Mini Trust} (ticker BTC,
-\$32.35/share) and \textbf{IWM put options} to maintain a position for
-capturing long-term macro momentum while trading intra-week volatility.
+This report describes a simple systematic scalping strategy where a single
+long position is held at a target allocation and periodically scalped. To
+manage downside risk, puts on assets with heavy correlations against the long
+position are used to manage drawdowns.
 
-The portfolio maintains a 46.1\% BTC Mini Trust position with
-\textcolor{gain}{+\$15,770} in BTC trading P\&L and
+Ideally, this strategy works best when used on a single volatile position with
+known structural correlations against other assets with less trading volume.
+
+To manage costs, free cash from trades are designed as limit orders for puts
+priced with slight buffers against current momentum, recapturing some of the
+transaction costs during momentum-based crossovers. Correlations, volatility
+pricing, and take-profit targets are periodically revisited, with a focus on
+manual intraday rebalancing and risk-based sell-offs to cover strategy gaps.
+
+As of March~4, 2026, this portfolio maintains a 46.1\% BTC Mini Trust
+position with \textcolor{gain}{+\$15,770} in BTC trading P\&L and
 \textcolor{gain}{+\$4,195} in options P\&L over the Feb~21--Mar~4 window.
-A full-history backtest (398 trading days) and thesis decay analysis reveal
-correlations between BTC and major indices averaging $+0.45$ to $+0.53$ (63d).
+The BTC Mini Trust position has been held within 10\% of the target
+${\raise.17ex\hbox{$\scriptstyle\sim$}}$50\% portfolio allocation during the
+entirety of the Dec~4, 2025 to March~4, 2026 window. This technical report
+explores the strategy using full-history backtests, correlation calculations,
+and volatility pricing methodologies.
 
-This update adds \textbf{actual IWN options chain data} from the Netlify blob
-store, comparing implied volatility snapshots from early March vs.\ late March
-2026, and includes a new analysis of the \textbf{implied volatility smile}
-across strikes and moneyness buckets.
+The strategy was implemented live and trading results are documented in this
+report.
 
 % ============================================================
 \section{Current Positions \& Thesis}
@@ -62,18 +69,20 @@ across strikes and moneyness buckets.
 
 Grayscale BTC Mini Trust is a low-cost (\$0.15 expense ratio) alternative to
 owning BTC directly. It trades on public markets during regular hours
-(9:30am--4:00pm ET) and on some after-hours exchanges. Key characteristics:
+(9:30am--4:00pm ET) and on some after-hours exchanges.
 
-\begin{itemize}[nosep]
-  \item \textbf{Current position}: 2,613 shares at \$32.23 = \$84,228
-        (43.2\% of portfolio)
+\medskip
+\noindent Key characteristics:
+
+\begin{itemize}[itemsep=4pt]
   \item \textbf{Tracks spot BTC}: $\rho = +0.97$ (21d) with BTC/USD,
         $+1.00$ with IBIT (spot BTC ETF)
   \item \textbf{Realized vol}: 81.5\% annualized (21d) vs.\ 83.0\% for
         spot BTC/USD
 \end{itemize}
 
-\textbf{Disadvantages}: BTC Mini Trust experiences slippage during after-hours
+\medskip
+\noindent\textbf{Disadvantages}: BTC Mini Trust experiences slippage during after-hours
 and pre-market trading, as the trust must track to BTC/USD with limited
 liquidity outside regular sessions. It is also difficult to rebalance and
 de-risk BTC/USD exposure over the weekend when crypto markets trade while
@@ -608,5 +617,19 @@ Open orders & BUY 522 BTC @ \$31.66 / SELL 522 @ \$31.70 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+% ============================================================
+\vfill
+\noindent\rule{\textwidth}{0.4pt}
+\begin{small}
+\noindent\textbf{Change Log} \\[2pt]
+\begin{tabular}{@{}ll}
+March 4, 2026  & Original report \\
+March 25, 2026 & Added actual IWN options chain data from blob store; \\
+               & added IV smile analysis section with moneyness buckets; \\
+               & added options BUY/SELL fills to engine performance; \\
+               & removed GLD section; regenerated PDF \\
+\end{tabular}
+\end{small}
 
 \end{document}
