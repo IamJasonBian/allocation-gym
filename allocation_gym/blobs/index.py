@@ -160,20 +160,44 @@ class BlobIndex(Generic[T]):
 
     # ── Named indexes for repeated lookups ──────────────────
 
-    def build_index(self, name: str, key_fn: Callable[[T], Any]) -> None:
+    def build_index(
+        self,
+        name: str,
+        key_fn: Callable[[T], Any],
+        dedup_fn: Callable[[T], Any] | None = None,
+    ) -> None:
         """Build a named index for O(1) lookups by *key_fn*.
 
         Parameters
         ----------
         name : str
-            Index name (e.g. "by_expiry", "by_strike").
+            Index name (e.g. "by_expiry", "by_strike", "by_symbol").
         key_fn : callable
             Extracts the index key from each item.
+        dedup_fn : callable, optional
+            When provided, only the item with the **maximum** value returned by
+            *dedup_fn* is kept for each key.  This is useful for building a
+            ``"by_symbol"`` index where only the latest record per symbol is
+            needed::
+
+                idx.build_index(
+                    "by_symbol",
+                    key_fn=lambda s: s.symbol,
+                    dedup_fn=lambda s: s.latest_quote.timestamp,
+                )
         """
-        idx: dict[Any, list[T]] = defaultdict(list)
-        for item in self._items:
-            idx[key_fn(item)].append(item)
-        self._indexes[name] = dict(idx)
+        if dedup_fn is not None:
+            best: dict[Any, T] = {}
+            for item in self._items:
+                k = key_fn(item)
+                if k not in best or dedup_fn(item) > dedup_fn(best[k]):
+                    best[k] = item
+            self._indexes[name] = {k: [v] for k, v in best.items()}
+        else:
+            idx: dict[Any, list[T]] = defaultdict(list)
+            for item in self._items:
+                idx[key_fn(item)].append(item)
+            self._indexes[name] = dict(idx)
 
     def get(self, index_name: str, key: Any) -> BlobIndex[T]:
         """Look up items by *key* in a previously built named index."""

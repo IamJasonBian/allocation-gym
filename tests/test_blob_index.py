@@ -234,11 +234,7 @@ def _make_intraday_snap(symbol: str, ts: str, bid: float, iv: float) -> OptionSn
 
 
 def test_build_index_deduplicates_by_symbol():
-    """build_index('by_symbol') must keep only the latest record per symbol.
-
-    FAILS today: the index stores all intraday duplicates, so get() returns 3
-    items for a symbol that was polled 3 times during the session.
-    """
+    """build_index('by_symbol') with dedup_fn keeps only the latest record per symbol."""
     sym = "CRWD260418C00350000"
 
     # Three intraday polls for the same contract — latest has highest IV.
@@ -249,14 +245,17 @@ def test_build_index_deduplicates_by_symbol():
     ]
 
     idx = BlobIndex(snapshots)
-    idx.build_index("by_symbol", key_fn=lambda s: s.symbol)
+    idx.build_index(
+        "by_symbol",
+        key_fn=lambda s: s.symbol,
+        dedup_fn=lambda s: s.latest_quote.timestamp,
+    )
 
     result = idx.get("by_symbol", sym)
 
     # Expect exactly one (the latest) record per symbol.
     assert len(result) == 1, (
-        f"Expected 1 deduplicated record for {sym}, got {len(result)}. "
-        "build_index does not deduplicate — it accumulates all intraday snapshots."
+        f"Expected 1 deduplicated record for {sym}, got {len(result)}."
     )
     assert result[0].latest_quote.timestamp == "2026-03-24T14:30:00Z"
     assert result[0].iv == 0.36
