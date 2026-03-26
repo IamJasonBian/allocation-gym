@@ -144,6 +144,57 @@ EFA & +0.584 & +0.469 & +0.408 & +0.473 & +0.365 & +0.351 \\
 \end{tabular}
 \end{table}
 
+\subsection{Confounding Factor Analysis}
+
+The BTC--IWN correlation may be partly driven by shared exposure to macro
+risk factors rather than a direct relationship. To test this, we compute
+\textbf{partial correlations}---the residual BTC--IWN correlation after
+regressing out each candidate confounder---at 3-month, 6-month, and
+12-month horizons.
+
+\begin{table}[H]
+\centering
+\caption{BTC $\leftrightarrow$ IWN partial correlations controlling for confounding factors}
+\begin{tabular}{lccc}
+\toprule
+Controlling For & 3M & 6M & 12M \\
+\midrule
+\textbf{None (raw)} & +0.494 & +0.453 & +0.455 \\
+VIX & +0.254 & +0.207 & +0.204 \\
+DXY (Dollar) & +0.484 & +0.446 & +0.458 \\
+10Y Yield & +0.513 & +0.457 & +0.452 \\
+2Y Yield & +0.493 & +0.458 & +0.435 \\
+2s10s Spread & +0.503 & +0.454 & +0.451 \\
+\midrule
+\textbf{All factors} & +0.282 & +0.205 & +0.206 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\medskip
+\begin{itemize}[itemsep=4pt]
+  \item \textbf{VIX is the dominant confounder}: controlling for VIX alone
+        reduces the correlation by ${\raise.17ex\hbox{$\scriptstyle\sim$}}$0.25
+        across all horizons (e.g.\ +0.455 $\to$ +0.204 at 12M). Shared
+        sensitivity to equity volatility regime explains roughly half the
+        co-movement.
+  \item \textbf{DXY and treasury yields have minimal impact}: the dollar
+        index, 10Y yield, 2Y yield, and 2s10s spread each shift the
+        correlation by less than $\pm$0.02, indicating these macro factors
+        do not meaningfully confound the BTC-IWN relationship.
+  \item \textbf{Residual correlation persists}: even after controlling for
+        all five factors simultaneously, BTC-IWN retains a +0.20--0.28
+        partial correlation. This residual suggests a genuine structural
+        link---likely institutional risk-on/risk-off flows affecting both
+        crypto and small-cap value equities.
+\end{itemize}
+
+\medskip
+\noindent The implication for hedging is that IWN puts remain effective during
+BTC drawdowns even after accounting for shared VIX exposure, because the
+residual co-movement is driven by correlated selling pressure rather than a
+spurious macro factor.
+
 % ============================================================
 \section{Realized Volatility \& Hedge Selection}
 % ============================================================
