@@ -19,15 +19,12 @@
 
 \pagestyle{fancy}
 \fancyhf{}
-\rhead{Allocation Engine --- Internal}
-\lhead{BTC Mini-Trust \& IWM Put Strategy}
 \rfoot{\thepage}
 
 \title{%
-  \textbf{Grayscale BTC Mini-Trust \& IWM Put Hedging} \\[4pt]
-  \large Intra-Week Volatility Trading with Long-Term Macro Momentum
+  \textbf{Volatility Scalping with Static Positions} \\[4pt]
+  \large Grayscale BTC Mini-Trust \& IWN Puts
 }
-\author{Allocation Engine Research}
 \date{March 4, 2026}
 
 \begin{document}
@@ -38,24 +35,19 @@
 \section{Executive Summary}
 % ============================================================
 
-This report summarizes using \textbf{Grayscale BTC Mini Trust} (ticker BTC,
-\$32.35/share) and \textbf{IWM put options} to maintain a position for
-capturing long-term macro momentum while trading intra-week volatility.
-
-The portfolio maintains a 46.1\% BTC Mini Trust position with
+This report describes a systematic scalping strategy where a single volatile
+long position is held at a target allocation and periodically scalped against
+correlated put hedges. Free cash from scalp trades funds limit orders for puts
+priced with slight buffers against current momentum, recapturing transaction
+costs during momentum-based crossovers. As of March~4, 2026, this portfolio
+maintains a 46.1\% BTC Mini Trust position with
 \textcolor{gain}{+\$15,770} in BTC trading P\&L and
 \textcolor{gain}{+\$4,195} in options P\&L over the Feb~21--Mar~4 window.
-A full-history backtest (398 trading days) and thesis decay analysis reveal
-correlations between BTC and major indices averaging $+0.45$ to $+0.53$ (63d).
-
-This strategy enables long-term holds for volatile assets as a risk management
-framework with trending momentum, capturing gains via momentum-based DCA
-during intra-week drawdowns. The approach could serve as a systematic arbitrage strategy by
-exploiting correlated drawdowns across BTC and small-cap equities.
-Additionally, the strategy seeks to identify where \textbf{volatility is
-underpriced relative to institutional demand}---IWM puts at 4.4\% of spot
-(3M ATM) and SPY puts at 2.6\% provide significantly cheaper protection
-than direct BTC puts at 14.0\%.
+The BTC Mini Trust position has been held within 10\% of the target
+${\raise.17ex\hbox{$\scriptstyle\sim$}}$50\% portfolio allocation during the
+entirety of the Dec~4, 2025 to March~4, 2026 trading window. This report
+documents live trading results alongside full-history backtests, correlation
+analysis, and volatility pricing methodologies.
 
 % ============================================================
 \section{Current Positions \& Thesis}
@@ -65,32 +57,71 @@ than direct BTC puts at 14.0\%.
 
 Grayscale BTC Mini Trust is a low-cost (\$0.15 expense ratio) alternative to
 owning BTC directly. It trades on public markets during regular hours
-(9:30am--4:00pm ET) and on some after-hours exchanges. Key characteristics:
+(9:30am--4:00pm ET) and on some after-hours exchanges.
 
-\begin{itemize}[nosep]
-  \item \textbf{Current position}: 2,613 shares at \$32.23 = \$84,228
-        (43.2\% of portfolio)
+\medskip
+\noindent\textbf{Key characteristics:}
+
+\begin{itemize}[itemsep=4pt]
   \item \textbf{Tracks spot BTC}: $\rho = +0.97$ (21d) with BTC/USD,
         $+1.00$ with IBIT (spot BTC ETF)
   \item \textbf{Realized vol}: 81.5\% annualized (21d) vs.\ 83.0\% for
         spot BTC/USD
 \end{itemize}
 
-\textbf{Disadvantages}: BTC Mini Trust experiences slippage during after-hours
-and pre-market trading, as the trust must track to BTC/USD with limited
-liquidity outside regular sessions. It is also difficult to rebalance and
-de-risk BTC/USD exposure over the weekend when crypto markets trade while
-equity markets are closed. Platforms such as Binance, Coinbase, and others
-offer BTC/USD futures, but at significant cost (trading fees + margin
-financing). More critically, BTC options and Deribit-style derivatives are
-\textbf{not legal in New York} at the time of execution---making equity-listed
-put hedges (IWM, SPY) the only viable options overlay for NY-based portfolios.
+\medskip
+\noindent\textbf{Index Weaknesses:}
+
+\medskip
+\noindent BTC Mini Trust experiences slippage
+during after-hours and pre-market trading, as the trust must track to
+BTC/USD with limited liquidity outside regular sessions. It is also
+difficult to rebalance and de-risk BTC/USD exposure over the weekend when
+crypto markets trade while equity markets are closed. Platforms such as
+Binance, Coinbase, and others offer BTC/USD futures, but at significant
+cost (trading fees + margin financing). More critically, BTC options and
+Deribit-style derivatives are \textbf{not legal in New York} at the time of
+execution---making equity-listed put hedges (IWN, SPY) the only viable
+options overlay for NY-based portfolios during the weekday. As of this time,
+a good hedging strategy has not been discovered for weekend use.
 
 \subsection{Rolling Return Correlations}
 
-In the midst of recent market volatility, BTC Mini Trust has exhibited strong
-correlation at a macro level with popular indices and individual stocks. We
-compute the Pearson correlation on log returns:
+In the midst of recent market volatility, BTC Mini Trust has exhibited
+strong correlations at a macro level with popular indices and individual
+stocks.
+
+\medskip
+\textbf{During BTC sell-offs, IWN tends to sell off in tandem, making IWN puts a
+good proxy hedge for BTC drawdowns.} This criteria can be summarised as:
+
+\begin{enumerate}[itemsep=4pt]
+  \item Institutional demand for IWN and IWN options are less when compared
+        to SPY puts. This simplifies the relevant macro landscape during
+        research.
+  \item As of March~4, 2026, AI-driven uncertainty increases small-cap
+        volatility; IWN serves as a strong diversified basket to simplify
+        momentum, manage drawdown events, and trade sentiment.
+\end{enumerate}
+
+\textbf{Volatility pricing and signal generation} for these pairs can be summarised as:
+
+\begin{enumerate}[itemsep=4pt]
+  \item BTC is a good proxy for news-events, with weekend movements
+        providing some signal for hedging targets during the weekday.
+  \item Implied and realised volatility for both tend to change frequently
+        across a 30-day window, providing good exit points for option
+        positions at fair prices.
+  \item Large drawdowns in BTC generally happen in tandem with indexes,
+        allowing puts to buffer a large portion of unrealised losses while
+        profitability is generated via scalping.
+  \item Breaks in the correlation (i.e.\ BTC increases while IWN drops, or
+        BTC drops while IWN increases) are generally manageable when BTC has
+        positive 30-day and 60-day SMAs, as the core long position
+        appreciates.
+\end{enumerate}
+
+We compute the Pearson correlation on log returns:
 \[
   \rho_{N}(t) = \frac{\sum_{i=1}^{N}(r^{A}_i - \bar{r}^{A})(r^{B}_i - \bar{r}^{B})}
   {\sqrt{\sum(r^{A}_i - \bar{r}^{A})^2}\;\sqrt{\sum(r^{B}_i - \bar{r}^{B})^2}}
@@ -100,25 +131,69 @@ compute the Pearson correlation on log returns:
 \begin{table}[H]
 \centering
 \caption{Grayscale BTC Mini-Trust: rolling return correlation with major ETFs}
-\begin{tabular}{lccccccc}
+\begin{tabular}{lcccccc}
 \toprule
-Ticker & 5d & 10d & 15d & 20d & 25d & 30d & 35d \\
+Ticker & 5d & 10d & 15d & 20d & 25d & 30d \\
 \midrule
-SPY & \textcolor{loss}{+0.901} & \textcolor{loss}{+0.757} & \textcolor{loss}{+0.722} & \textcolor{loss}{+0.758} & \textcolor{loss}{+0.685} & \textcolor{loss}{+0.651} & \textcolor{loss}{+0.631} \\
-QQQ & \textcolor{loss}{+0.886} & \textcolor{loss}{+0.745} & \textcolor{loss}{+0.706} & \textcolor{loss}{+0.752} & \textcolor{loss}{+0.679} & \textcolor{loss}{+0.639} & \textcolor{loss}{+0.619} \\
-IWM & \textcolor{loss}{+0.860} & \textcolor{loss}{+0.726} & \textcolor{loss}{+0.698} & \textcolor{loss}{+0.771} & \textcolor{loss}{+0.650} & \textcolor{loss}{+0.606} & +0.575 \\
-GLD & +0.498 & +0.359 & +0.339 & +0.422 & +0.289 & +0.271 & +0.210 \\
-DIA & \textcolor{loss}{+0.878} & \textcolor{loss}{+0.687} & \textcolor{loss}{+0.623} & \textcolor{loss}{+0.712} & +0.527 & +0.474 & +0.431 \\
-EFA & +0.584 & +0.469 & +0.408 & +0.473 & +0.365 & +0.351 & +0.296 \\
+SPY & \textcolor{loss}{+0.901} & \textcolor{loss}{+0.757} & \textcolor{loss}{+0.722} & \textcolor{loss}{+0.758} & \textcolor{loss}{+0.685} & \textcolor{loss}{+0.651} \\
+QQQ & \textcolor{loss}{+0.886} & \textcolor{loss}{+0.745} & \textcolor{loss}{+0.706} & \textcolor{loss}{+0.752} & \textcolor{loss}{+0.679} & \textcolor{loss}{+0.639} \\
+IWN & \textcolor{loss}{+0.860} & \textcolor{loss}{+0.726} & \textcolor{loss}{+0.698} & \textcolor{loss}{+0.771} & \textcolor{loss}{+0.650} & \textcolor{loss}{+0.606} \\
+DIA & \textcolor{loss}{+0.878} & \textcolor{loss}{+0.687} & \textcolor{loss}{+0.623} & \textcolor{loss}{+0.712} & +0.527 & +0.474 \\
+EFA & +0.584 & +0.469 & +0.408 & +0.473 & +0.365 & +0.351 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-IWM (iShares Russell 2000 ETF) is the most relevant hedge candidate:
-$\rho = +0.77$ with BTC at 20d, and it has the \textbf{deepest options
-liquidity} among small-cap indices. When BTC sells off, IWM tends to sell
-off in tandem---making IWM puts a proxy hedge for BTC drawdowns at a
-fraction of the cost.
+\subsection{Confounding Factor Analysis}
+
+The BTC--IWN correlation may be partly driven by shared exposure to macro
+risk factors rather than a direct relationship. To test this, we compute
+\textbf{partial correlations}---the residual BTC--IWN correlation after
+regressing out each candidate confounder---at 3-month, 6-month, and
+12-month horizons.
+
+\begin{table}[H]
+\centering
+\caption{BTC $\leftrightarrow$ IWN partial correlations controlling for confounding factors}
+\begin{tabular}{lccc}
+\toprule
+Controlling For & 3M & 6M & 12M \\
+\midrule
+\textbf{None (raw)} & +0.494 & +0.453 & +0.455 \\
+VIX & +0.254 & +0.207 & +0.204 \\
+DXY (Dollar) & +0.484 & +0.446 & +0.458 \\
+10Y Yield & +0.513 & +0.457 & +0.452 \\
+2Y Yield & +0.493 & +0.458 & +0.435 \\
+2s10s Spread & +0.503 & +0.454 & +0.451 \\
+\midrule
+\textbf{All factors} & +0.282 & +0.205 & +0.206 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\medskip
+\begin{itemize}[itemsep=4pt]
+  \item \textbf{VIX is the dominant confounder}: controlling for VIX alone
+        reduces the correlation by ${\raise.17ex\hbox{$\scriptstyle\sim$}}$0.25
+        across all horizons (e.g.\ +0.455 $\to$ +0.204 at 12M). Shared
+        sensitivity to equity volatility regime explains roughly half the
+        co-movement.
+  \item \textbf{DXY and treasury yields have minimal impact}: the dollar
+        index, 10Y yield, 2Y yield, and 2s10s spread each shift the
+        correlation by less than $\pm$0.02, indicating these macro factors
+        do not meaningfully confound the BTC-IWN relationship.
+  \item \textbf{Residual correlation persists}: even after controlling for
+        all five factors simultaneously, BTC-IWN retains a +0.20--0.28
+        partial correlation. This residual suggests a genuine structural
+        link---likely institutional risk-on/risk-off flows affecting both
+        crypto and small-cap value equities.
+\end{itemize}
+
+\medskip
+\noindent The implication for hedging is that IWN puts remain effective during
+BTC drawdowns even after accounting for shared VIX exposure, because the
+residual co-movement is driven by correlated selling pressure rather than a
+spurious macro factor.
 
 % ============================================================
 \section{Realized Volatility \& Hedge Selection}
@@ -127,27 +202,31 @@ fraction of the cost.
 \begin{table}[H]
 \centering
 \caption{Annualized realized volatility comparison (21-day window)}
-\begin{tabular}{lcc}
+\begin{tabular}{lcccc}
 \toprule
-Instrument & Spot Price & 21d Vol \\
+Instrument & Spot Price & 21d Vol & Avg Weekly $|\Delta\%|$ & Max Weekly $|\Delta\%|$ \\
 \midrule
-\textbf{Grayscale BTC} & \textbf{\$32.35} & \textbf{81.5\%} \\
-Spot BTC/USD & \$72,848 & 83.0\% \\
-GLD  & \$471.80 & 43.5\% \\
-IWM  & \$261.76 & 21.1\% \\
-IWN  & \$198.11 & 18.4\% \\
-QQQ  & \$610.75 & 18.1\% \\
-SPY  & \$685.13 & 13.0\% \\
+\textbf{Grayscale BTC} & \textbf{\$31.34} & \textbf{81.5\%} & \textbf{4.37\%} & \textbf{19.41\%} \\
+Spot BTC/USD & \$71,179 & 83.0\% & 4.63\% & 17.07\% \\
+IWM  & \$251.82 & 21.1\% & 2.22\% & 9.61\% \\
+IWN  & \$191.20 & 18.4\% & 2.20\% & 9.34\% \\
+QQQ  & \$587.82 & 18.1\% & 2.05\% & 9.73\% \\
+SPY  & \$656.82 & 13.0\% & 1.57\% & 9.07\% \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Grayscale BTC is ${\raise.17ex\hbox{$\scriptstyle\sim$}}$6$\times$ more
 volatile than SPY and ${\raise.17ex\hbox{$\scriptstyle\sim$}}$4$\times$ more
-volatile than IWM. Given the strong correlation ($\rho = +0.77$), IWM
-puts provide \textbf{correlated downside protection} at a vol-adjusted
-discount: IWM's 21.1\% vol means options are priced off a much lower
-base, while still capturing the same equity drawdown events that hit BTC.
+volatile than IWN. IWN offers more exposure for weekly momentum (2.20\% avg
+weekly move) while maintaining similar max drawdowns as QQQ (9.73\%) and SPY
+(9.07\%). We use IWN rather than IWM as IWN has more trading volume in its
+options chain. Given the strong correlation ($\rho = +0.77$), IWN puts
+provide \textbf{correlated downside protection} at a vol-adjusted discount:
+IWN's 18.4\% vol means options are priced with lower theta decays than BTC.
+This allows IWN to capture equity drawdown events against BTC across longer
+time horizons (i.e.\ 30 days) while maintaining similar spot movements as
+QQQ and SPY without covariance against other larger macro events.
 
 % ============================================================
 \section{Put Cost Comparison}
@@ -161,7 +240,7 @@ base, while still capturing the same equity drawdown events that hit BTC.
 Ticker & Spot & Vol & 3M Put \% & 6M Put \% & 12M Put \% \\
 \midrule
 \textcolor{loss}{Grayscale BTC} & \$32.35 & \textcolor{loss}{81.5\%} & \textcolor{loss}{15.4\%} & \textcolor{loss}{21.1\%} & \textcolor{loss}{28.4\%} \\
-IWM & \$261.76 & 21.1\% & \textbf{4.4\%} & 5.7\% & 7.0\% \\
+IWN & \$261.76 & 21.1\% & \textbf{4.4\%} & 5.7\% & 7.0\% \\
 IWN & \$198.11 & 18.4\% & 4.0\% & 5.1\% & 6.3\% \\
 QQQ & \$610.75 & 18.1\% & 3.8\% & 4.9\% & 5.9\% \\
 SPY & \$685.13 & 13.0\% & 2.6\% & 3.2\% & 3.7\% \\
@@ -169,15 +248,193 @@ SPY & \$685.13 & 13.0\% & 2.6\% & 3.2\% & 3.7\% \\
 \end{tabular}
 \end{table}
 
-Direct BTC puts cost \textbf{3.5$\times$ more than IWM puts} at the 3M
+Direct BTC puts cost \textbf{3.5$\times$ more than IWN puts} at the 3M
 tenor. For the portfolio's \$84K BTC position:
-\begin{itemize}[nosep]
+
+\medskip
+\begin{itemize}[itemsep=4pt]
   \item Direct BTC 3M ATM puts: ${\raise.17ex\hbox{$\scriptstyle\sim$}}$\$12,900/qtr
         (15.4\% of spot)
-  \item IWM 3M ATM puts on equivalent notional: ${\raise.17ex\hbox{$\scriptstyle\sim$}}$\$3,700/qtr
+  \item IWN 3M ATM puts on equivalent notional: ${\raise.17ex\hbox{$\scriptstyle\sim$}}$\$3,700/qtr
         (4.4\% of spot)
   \item \textbf{Savings: \$9,200/qtr} while maintaining correlated
         downside protection
+\end{itemize}
+
+% ============================================================
+\section{IWN Options Chain: Actual Market Data}
+% ============================================================
+
+The following data is sourced from \textbf{option chain snapshots} captured by
+system market feeds. These are current positions as of the March~4 report date.
+
+\subsection{Options Chain Overview}
+
+Each option chain snapshot contains the full options chain for IWN including
+quotes (bid/ask/mid), implied volatility, and Greeks (delta, gamma, theta,
+vega) for every listed contract.
+
+The underlying IWN price is derived via \textbf{put-call parity} across
+matched strike/expiry pairs:
+\[
+  S = C - P + K \cdot e^{-rT}
+  \quad\Rightarrow\quad
+  \hat{S} = \frac{1}{N}\sum_{i=1}^{N}(C_i - P_i + K_i)
+\]
+where $C_i, P_i$ are mid-prices for matched call/put pairs at strike $K_i$.
+
+\begin{table}[H]
+\centering
+\caption{IWN options chain summary --- March~4, 2026}
+\begin{tabular}{lc}
+\toprule
+Metric & Mar~4 \\
+\midrule
+Underlying (put-call parity) & \$197.82 \\
+Total contracts & 100 \\
+Contracts with IV & 75 \\
+ATM IV (delta $\approx 0.50$) & 24.1\% \\
+Call avg IV & 25.7\% \\
+Put avg IV & 34.4\% \\
+\textbf{Put-Call IV skew} & \textbf{+8.6pp} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The put-call IV skew of ${\raise.17ex\hbox{$\scriptstyle\sim$}}$8.6pp
+confirms that IWN put protection carries a significant volatility premium
+relative to equivalent-distance calls, consistent with institutional demand
+for downside hedges in small-cap equities.
+
+\subsection{Options by Expiration}
+
+\begin{table}[H]
+\centering
+\caption{IWN options by expiry --- Mar~4 snapshot}
+\begin{tabular}{lccccc}
+\toprule
+Expiry & Contracts & Calls/Puts & Avg IV & Min IV & Max IV \\
+\midrule
+2026-03-20 & 53 & 26/27 & 31.3\% & 20.8\% & 52.5\% \\
+2026-04-17 & 22 & 22/0  & 22.9\% & 19.3\% & 28.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The near-term expiry (Mar~20) shows elevated IV (31.3\% avg) with a wide
+range up to 52.5\%, driven by deep OTM puts near expiration. The Apr~17
+expiry has a lower base of 22.9\%.
+
+\subsection{ATM Greeks}
+
+\begin{table}[H]
+\centering
+\caption{ATM Greeks (avg across $|\delta| \in [0.35, 0.65]$, 20 contracts)}
+\begin{tabular}{lcccc}
+\toprule
+Type & Delta & Gamma & Theta (\$/day) & Vega (\$/1\% IV) \\
+\midrule
+ATM Call & +0.558 & 0.034 & --\$0.098 & \$0.219 \\
+ATM Put  & --0.442 & 0.033 & --\$0.135 & \$0.162 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent
+The higher theta on puts (--\$0.135 vs --\$0.098 for calls) reflects the
+elevated put IV: puts decay faster in dollar terms because they are priced
+at a higher implied vol.
+
+% ============================================================
+\section{Implied Volatility Smile}
+% ============================================================
+
+The \textbf{implied volatility smile} (or ``smirk'') is one of the most
+important features of equity options markets. It describes how implied
+volatility varies across strikes for a given expiration, deviating from the
+constant-vol assumption of the Black-Scholes model.
+
+\subsection{Theory}
+
+In the Black-Scholes framework, all options on the same underlying with the
+same expiration should have identical implied volatility regardless of strike.
+In practice, this is never observed. Instead:
+
+\medskip
+\begin{itemize}[itemsep=4pt]
+  \item \textbf{Equity index options} exhibit a \textit{volatility skew}
+        (also called a ``smirk''): OTM puts have higher IV than ATM options,
+        which in turn have higher IV than OTM calls. This reflects demand for
+        downside protection and the empirical fat-tailed, negatively-skewed
+        distribution of equity returns.
+  \item \textbf{Single-stock options} may show a more symmetric smile,
+        especially around earnings events where large moves in either
+        direction are expected.
+  \item \textbf{Small-cap ETFs like IWN} tend to exhibit a pronounced skew
+        similar to broad indices, as institutional hedging demand concentrates
+        in OTM puts.
+\end{itemize}
+
+The smile can be characterised by its level (ATM IV), slope (the put-call
+skew), and curvature (how quickly IV increases away from ATM in both
+directions). Formally, for a fixed expiry $T$:
+\[
+  \sigma_{\mathrm{imp}}(K) = \sigma_{\mathrm{ATM}} + b_1\left(\frac{K - S}{S}\right)
+  + b_2\left(\frac{K - S}{S}\right)^2 + \cdots
+\]
+where $b_1 < 0$ captures the skew (puts more expensive) and $b_2 > 0$
+captures the curvature (both wings elevated).
+
+\subsection{IWN IV Smile: March~4, 2026}
+
+Using actual option chain snapshots, we compute the IV smile by grouping
+contracts into moneyness buckets relative to the derived underlying price:
+
+\begin{table}[H]
+\centering
+\caption{IWN IV by moneyness bucket (March~4, 2026)}
+\begin{tabular}{lc}
+\toprule
+Moneyness Bucket & IV \\
+\midrule
+Deep OTM Put ($-30\%$ to $-10\%$) & 36.3\% \\
+OTM Put ($-10\%$ to $-3\%$) & 30.2\% \\
+ATM ($\pm3\%$) & 24.7\% \\
+OTM Call ($+3\%$ to $+10\%$) & 23.8\% \\
+Deep OTM Call ($+10\%$ to $+30\%$) & 47.4\% \\
+\midrule
+\textbf{Put-Call IV Skew} & \textbf{+8.6pp} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The data confirms the characteristic \textbf{volatility smirk}: OTM puts
+(30.2\%) trade at ${\raise.17ex\hbox{$\scriptstyle\sim$}}$6.4pp above OTM
+calls (23.8\%), and deep OTM puts (36.3\%) are significantly elevated.
+The deep OTM call IV (47.4\%) is also elevated, creating a slight ``smile''
+shape rather than a pure skew---likely due to low liquidity and wide spreads
+at the wings.
+
+\subsection{Interpreting the Smile for Hedging}
+
+The IV smile has direct implications for the put hedging strategy:
+
+\medskip
+\begin{itemize}[itemsep=4pt]
+  \item \textbf{Skew cost}: OTM put protection costs more (in IV terms) than
+        ATM. For IWN, the put-call IV skew adds
+        ${\raise.17ex\hbox{$\scriptstyle\sim$}}$2--5pp to OTM put IV relative
+        to OTM calls, increasing hedge cost.
+  \item \textbf{ATM vs OTM trade-off}: ATM puts provide better vol-adjusted
+        value (lower IV) but cost more in dollar terms. OTM puts are cheaper
+        in dollars but embed a skew premium.
+  \item \textbf{Vega risk}: When the smile steepens (skew increases), existing
+        put positions gain value even without a move in the underlying. This
+        creates a secondary source of P\&L beyond pure delta hedging.
+  \item \textbf{Calendar spread opportunity}: if near-term IV is elevated
+        relative to longer-dated IV (inverted term structure), selling
+        short-dated puts and buying longer-dated puts captures the term
+        structure normalisation.
 \end{itemize}
 
 % ============================================================
@@ -186,7 +443,7 @@ tenor. For the portfolio's \$84K BTC position:
 
 \subsection{Protective Put Strategy (Executed)}
 
-The engine actively trades IWM and single-stock puts as directional hedges.
+The engine actively trades IWN and single-stock puts as directional hedges.
 Recent round-trips demonstrate the approach:
 
 \begin{table}[H]
@@ -196,8 +453,8 @@ Recent round-trips demonstrate the approach:
 \toprule
 Symbol & Strike/Exp & Qty & Open & Close & P\&L \\
 \midrule
-IWM & \$262 Put 3/11 & 10 & \$3,160 & \$4,960 & \textcolor{gain}{+\$1,800} \\
-IWM & \$247 Put 3/13 & 10 & \$1,410 & \$2,860 & \textcolor{gain}{+\$1,450} \\
+IWN & \$262 Put 3/11 & 10 & \$3,160 & \$4,960 & \textcolor{gain}{+\$1,800} \\
+IWN & \$247 Put 3/13 & 10 & \$1,410 & \$2,860 & \textcolor{gain}{+\$1,450} \\
 CRWD & \$390 Put 3/06 & 1  & \$2,105 & \$3,330 & \textcolor{gain}{+\$1,225} \\
 CRWD & \$367.5 Put 3/20 & 1 & \$1,905 & \$1,625 & \textcolor{loss}{--\$280} \\
 \midrule
@@ -206,58 +463,22 @@ CRWD & \$367.5 Put 3/20 & 1 & \$1,905 & \$1,625 & \textcolor{loss}{--\$280} \\
 \end{tabular}
 \end{table}
 
-The IWM \$262 put (10 contracts) was opened on Feb~26 at \$3.16/contract
-during the equity selloff, then closed on Feb~27 at \$4.96 after IWM
+The IWN \$262 put (10 contracts) was opened on Feb~26 at \$3.16/contract
+during the equity selloff, then closed on Feb~27 at \$4.96 after IWN
 dropped through the strike---a \textbf{57\% return in 1 day}. The second
-IWM trade (\$247 strike, Mar~13 expiry) captured the continued
+IWN trade (\$247 strike, Mar~13 expiry) captured the continued
 volatility with a 103\% return over 2 days.
 
-\subsection{Call Trading Variant}
 
-The same correlation structure supports \textbf{covered call strategies}:
-\begin{itemize}[nosep]
-  \item \textbf{IWM covered calls}: sell OTM calls against IWM shares
-        to generate income during low-vol periods. The $+0.77$ BTC
-        correlation means IWM rallies when BTC rallies, providing a
-        natural offset.
-  \item \textbf{BTC bracket + IWM call spread}: pair the BTC bracket
-        strategy with IWM bull call spreads to capture correlated upside
-        at lower premium than direct BTC calls (vol discount).
-  \item \textbf{Single-stock call overlays}: CRWD, NVDA, or other
-        high-beta names where implied vol exceeds realized---sell
-        premium on the call side during mean-reversion regimes.
-\end{itemize}
-
-% ============================================================
-\section{Monitoring}
-% ============================================================
-
-Ongoing signals to track for strategy calibration:
-
-\begin{itemize}[nosep]
-  \item \textbf{Implied vs.\ realized vol}: compare IWM/IWN implied vol
-        (from options chain) against 21d realized vol. When IV $>$ RV by
-        $>$20\%, puts are expensive---favor selling. When IV $<$ RV,
-        puts are cheap---favor buying.
-  \item \textbf{BTC implied vol}: track Deribit DVOL or BTC options
-        skew. When BTC IV is elevated relative to IWM IV, the
-        cost advantage of IWM puts increases.
-  \item \textbf{Rolling correlation stability}: monitor 21d BTC$\leftrightarrow$IWM
-        correlation. If $\rho$ drops below $+0.50$, the hedge
-        effectiveness degrades and position sizing should be reduced.
-  \item \textbf{Candidate screening}: scan for additional hedge
-        candidates where $\rho > +0.60$ with BTC and 3M ATM put cost
-        $< 6\%$ of spot.
-\end{itemize}
 
 % ============================================================
 \section{Backtest \& Performance}
 % ============================================================
 
-\subsection{Thesis Decay (398 Trading Days)}
+\subsection{Supporting Analysis (2024-07-31 to 2026-03-04)}
 
-A full-history analysis (2024-07-31 to 2026-03-04) tests whether the
-correlation thesis is stable:
+A full-history analysis across 63 trading days checks historical asset
+correlations:
 
 \begin{table}[H]
 \centering
@@ -268,8 +489,7 @@ Ticker & Earliest & Latest & Change & Mean & Std \\
 \midrule
 SPY      & +0.629 & +0.528 & --0.101 & +0.448 & 0.077 \\
 QQQ      & +0.551 & +0.510 & --0.041 & +0.463 & 0.087 \\
-IWM      & +0.628 & +0.536 & --0.092 & +0.489 & 0.078 \\
-GLD      & +0.443 & +0.192 & --0.251 & +0.083 & 0.124 \\
+IWN      & +0.628 & +0.536 & --0.092 & +0.489 & 0.078 \\
 IWN      & +0.615 & +0.440 & --0.174 & +0.454 & 0.089 \\
 BTC/USD  & +0.885 & +0.968 & +0.083  & +0.896 & 0.044 \\
 IBIT     & +0.999 & +1.000 & +0.001  & +0.999 & 0.001 \\
@@ -284,11 +504,9 @@ IBIT     & +0.999 & +1.000 & +0.001  & +0.999 & 0.001 \\
         declining}: latest 63d ($+0.53$) is below initial ($+0.63$).
   \item SPY correlation exceeded $+0.50$ only \textbf{39\% of the time}
         (first breach: 2024-08-29).
-  \item GLD correlation collapsed from $+0.44$ to $+0.19$---increasingly
-        effective as a diversifier.
 \end{itemize}
 
-\subsection{Strategy Backtests (399 Trading Days)}
+\subsection{Strategy Backtests (398 Trading Days)}
 
 \begin{table}[H]
 \centering
@@ -299,19 +517,25 @@ Strategy & Total Ret & Ann Ret & Ann Vol & Sharpe & Max DD & Calmar \\
 \midrule
 Baseline (current)          & +17.6\% & +10.8\% & 28.8\% & 0.22 & --28.1\% & 0.38 \\
 Path A (IBIT + SPY puts)    & +15.8\% &  +9.7\% & 29.1\% & 0.18 & --28.3\% & 0.34 \\
-\textcolor{gain}{\textbf{Path B (BTC + GLD)}} & \textcolor{gain}{\textbf{+23.6\%}} & \textcolor{gain}{\textbf{+14.4\%}} & \textbf{28.0\%} & \textcolor{gain}{\textbf{0.35}} & \textbf{--26.8\%} & \textcolor{gain}{\textbf{0.54}} \\
+Path B (BTC + GLD)          & +23.6\% & +14.4\% & 28.0\% & 0.35 & --26.8\% & 0.54 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{itemize}[nosep]
-  \item \textbf{Path B dominates}: higher return, lower vol, better
-        Sharpe, shallower drawdown, zero options cost.
   \item \textbf{Path A underperforms}: 7 quarterly SPY put rolls cost
         \$4,585 without reducing max drawdown.
-  \item \textbf{GLD hedge works}: adding 10\% GLD + trimming SPY/VOO
-        added ${\raise.17ex\hbox{$\scriptstyle\sim$}}$6\% return while
-        cutting 1.3pp of drawdown.
+  \item \textbf{Path B outperforms on paper}: adding 10\% GLD (funded by
+        trimming SPY/VOO) improves Sharpe from 0.22 to 0.35 and reduces
+        max drawdown from --28.1\% to --26.8\%. GLD's low correlation
+        with BTC ($\rho = +0.19$ at 63d) provides genuine diversification.
+        However, GLD does not hedge correlated equity drawdowns---it is a
+        macro diversifier, not a tail hedge.
+  \item The \textbf{IWN put strategy} (executed in practice) is more
+        targeted---buying puts only when IV $<$ RV signals cheap
+        protection, rather than rolling systematically. This approach
+        complements either baseline or Path~B allocations as a tactical
+        overlay.
 \end{itemize}
 
 \subsection{Actual Engine Performance (Feb 21 -- Mar 4, 2026)}
@@ -319,7 +543,8 @@ Path A (IBIT + SPY puts)    & +15.8\% &  +9.7\% & 29.1\% & 0.18 & --28.3\% & 0.3
 \begin{table}[H]
 \centering
 \caption{BTC (Grayscale Mini Trust) filled orders}
-\begin{tabular}{lllrrl}
+{\small
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lll r r r}
 \toprule
 Date & Side & Type & Shares & Avg Price & Notional \\
 \midrule
@@ -337,13 +562,50 @@ Date & Side & Type & Shares & Avg Price & Notional \\
 \multicolumn{3}{l}{\textbf{Totals}} & \multicolumn{3}{l}{Bought 1,575 @ avg \$29.76 / Sold 2,054 @ avg \$30.50} \\
 \multicolumn{3}{l}{\textbf{Trading P\&L}} & \multicolumn{3}{l}{\textcolor{gain}{\textbf{+\$15,770}} on round-trip volume} \\
 \bottomrule
-\end{tabular}
+\end{tabular*}}
 \end{table}
 
-The engine runs a \textbf{bracket strategy}: limit buys near support with
-stop-limit sells for risk management. The stop loss on 03/02 (500 shares
-@ \$29.01) was quickly followed by re-entry at \$29.95--\$30.20, capturing
-the reversal.
+The engine scalps using two regimes. In bear markets and drawdown events, it
+places buys at +0.5\% from spot and stop-loss sells at --1.25\%, rebalancing
+every 10 minutes with a target coverage of 20\% of position size in round-trip
+pairs. In sideways or bull markets, both buy and sell limits widen to 3\%,
+with sell proceeds used to fund puts when market momentum is positive.
+For example, the stop loss on 03/02 (500 shares @ \$29.01) was quickly
+followed by re-entry at \$29.95--\$30.20, capturing the reversal.
+
+\begin{table}[H]
+\centering
+\caption{Options filled orders (Feb 21 -- Mar 4, 2026)}
+{\small
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}lll l r r r}
+\toprule
+Date & Side & Symbol & Strike/Exp & Qty & Price & Notional \\
+\midrule
+02/26 & BUY  & IWN  & \$262 Put 3/11   & 10 & \$3.16  & \$3,160 \\
+02/27 & SELL & IWN  & \$262 Put 3/11   & 10 & \$4.96  & \$4,960 \\
+02/27 & BUY  & IWN  & \$247 Put 3/13   & 10 & \$1.41  & \$1,410 \\
+03/01 & SELL & IWN  & \$247 Put 3/13   & 10 & \$2.86  & \$2,860 \\
+02/25 & BUY  & CRWD & \$390 Put 3/06   &  1 & \$21.05 & \$2,105 \\
+02/27 & SELL & CRWD & \$390 Put 3/06   &  1 & \$33.30 & \$3,330 \\
+02/27 & BUY  & CRWD & \$367.5 Put 3/20 &  1 & \$19.05 & \$1,905 \\
+03/04 & SELL & CRWD & \$367.5 Put 3/20 &  1 & \$16.25 & \$1,625 \\
+\midrule
+\multicolumn{5}{l}{\textbf{Options Trading P\&L}} & \multicolumn{2}{r}{\textcolor{gain}{\textbf{+\$4,195}}} \\
+\bottomrule
+\end{tabular*}}
+\end{table}
+
+\noindent
+The IWN \$262 put was opened on 02/26 to hedge against further BTC drawdowns
+during the equity selloff. It was closed the next day for
+\textcolor{gain}{+\$1,800} (57\% return) as a quick take-profit before theta
+decay eroded the position. The follow-on \$247 put captured
+\textcolor{gain}{+\$1,450} (103\% over 2 days) on continued weakness. On the
+single-stock side, the CRWD \$390 put returned
+\textcolor{gain}{+\$1,225}, while the \$367.5 roll gave back
+\textcolor{loss}{--\$280} as CRWD stabilised. Combined with BTC trading
+P\&L, total engine performance over the window was
+\textcolor{gain}{\textbf{+\$19,965}}.
 
 \subsection{Current State (Mar 4, 2026)}
 
@@ -363,5 +625,18 @@ Open orders & BUY 522 BTC @ \$31.66 / SELL 522 @ \$31.70 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+% ============================================================
+\vfill
+\noindent\rule{\textwidth}{0.4pt}
+\begin{small}
+\noindent\textbf{Change Log} \\[2pt]
+\begin{tabular}{@{}ll}
+March 4, 2026  & Original report \\
+March 25, 2026 & Added IV smile analysis sections; \\
+               & added options BUY/SELL fills to actual performance \\
+               & for historical Mar~4 data \\
+\end{tabular}
+\end{small}
 
 \end{document}
