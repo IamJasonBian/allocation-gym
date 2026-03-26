@@ -16,12 +16,11 @@ Usage:
 """
 
 import argparse
-import os
-from datetime import datetime
 
 import backtrader as bt
 
 from allocation_gym.config import BacktestConfig
+from allocation_gym.data.loaders import load_ohlcv, is_crypto
 from allocation_gym.strategies.momentum import MomentumStrategy
 from allocation_gym.strategies.mean_reversion import MeanReversionStrategy
 from allocation_gym.strategies.variance_kelly import VarianceKellyStrategy
@@ -35,94 +34,6 @@ STRATEGY_MAP = {
     "mean_reversion": MeanReversionStrategy,
     "variance_kelly": VarianceKellyStrategy,
 }
-
-CRYPTO_SYMBOLS = {"BTC/USD", "ETH/USD", "LTC/USD", "DOGE/USD", "AVAX/USD", "SOL/USD"}
-
-
-def _is_crypto(symbol):
-    return symbol.upper() in CRYPTO_SYMBOLS or "/USD" in symbol.upper()
-
-
-def _load_alpaca_crypto(symbol, start, end, api_key, secret_key):
-    """Fetch historical crypto bars from Alpaca."""
-    import pandas as pd
-    from alpaca.data.historical import CryptoHistoricalDataClient
-    from alpaca.data.requests import CryptoBarsRequest
-    from alpaca.data.timeframe import TimeFrame
-
-    client = CryptoHistoricalDataClient(api_key, secret_key)
-    request = CryptoBarsRequest(
-        symbol_or_symbols=symbol,
-        start=datetime.strptime(start, "%Y-%m-%d"),
-        end=datetime.strptime(end, "%Y-%m-%d"),
-        timeframe=TimeFrame.Day,
-    )
-    bars = client.get_crypto_bars(request)
-    df = bars.df
-
-    if isinstance(df.index, pd.MultiIndex):
-        df = df.xs(symbol, level="symbol")
-
-    df.index = pd.to_datetime(df.index)
-    if df.index.tz is not None:
-        df.index = df.index.tz_localize(None)
-
-    df = df.rename(columns={
-        "open": "Open", "high": "High", "low": "Low",
-        "close": "Close", "volume": "Volume",
-    })
-    df = df[["Open", "High", "Low", "Close", "Volume"]]
-    return bt.feeds.PandasData(dataname=df)
-
-
-def _load_alpaca_stock(symbol, start, end, api_key, secret_key):
-    """Fetch historical stock bars from Alpaca."""
-    import pandas as pd
-    from alpaca.data.historical import StockHistoricalDataClient
-    from alpaca.data.requests import StockBarsRequest
-    from alpaca.data.timeframe import TimeFrame
-
-    client = StockHistoricalDataClient(api_key, secret_key)
-    request = StockBarsRequest(
-        symbol_or_symbols=symbol,
-        start=datetime.strptime(start, "%Y-%m-%d"),
-        end=datetime.strptime(end, "%Y-%m-%d"),
-        timeframe=TimeFrame.Day,
-    )
-    bars = client.get_stock_bars(request)
-    df = bars.df
-
-    if isinstance(df.index, pd.MultiIndex):
-        df = df.xs(symbol, level="symbol")
-
-    df.index = pd.to_datetime(df.index)
-    if df.index.tz is not None:
-        df.index = df.index.tz_localize(None)
-
-    df = df.rename(columns={
-        "open": "Open", "high": "High", "low": "Low",
-        "close": "Close", "volume": "Volume",
-    })
-    df = df[["Open", "High", "Low", "Close", "Volume"]]
-    return bt.feeds.PandasData(dataname=df)
-
-
-def _load_alpaca_data(symbol, start, end, api_key, secret_key):
-    if _is_crypto(symbol):
-        return _load_alpaca_crypto(symbol, start, end, api_key, secret_key)
-    return _load_alpaca_stock(symbol, start, end, api_key, secret_key)
-
-
-def _load_yfinance_data(symbol, start, end):
-    """Fetch data from Yahoo Finance."""
-    import yfinance as yf
-
-    df = yf.download(symbol, start=start, end=end, auto_adjust=True, progress=False)
-    if df.empty:
-        raise ValueError(f"No data returned for {symbol} from Yahoo Finance")
-    if hasattr(df.columns, 'levels') and len(df.columns.levels) > 1:
-        df.columns = df.columns.droplevel(1)
-    return bt.feeds.PandasData(dataname=df)
 
 
 def _parse_min_weights(raw):
@@ -142,10 +53,12 @@ def build_cerebro(args, config: BacktestConfig) -> bt.Cerebro:
     api_key, secret_key = get_alpaca_keys()
 
     for symbol in args.symbols:
-        if args.data_source == "alpaca" and api_key and secret_key:
-            data = _load_alpaca_data(symbol, args.start, args.end, api_key, secret_key)
-        else:
-            data = _load_yfinance_data(symbol, args.start, args.end)
+        data = load_ohlcv(
+            symbol, args.start, args.end,
+            source=args.data_source,
+            api_key=api_key,
+            secret_key=secret_key,
+        )
         cerebro.adddata(data, name=symbol)
 
     strategy_cls = STRATEGY_MAP[args.strategy]
@@ -159,7 +72,7 @@ def build_cerebro(args, config: BacktestConfig) -> bt.Cerebro:
     if args.strategy == "variance_kelly":
         exp_ret = {}
         for s in args.symbols:
-            if _is_crypto(s):
+            if is_crypto(s):
                 exp_ret[s] = 0.40  # higher expected return for crypto
             else:
                 exp_ret[s] = 0.10
