@@ -1,6 +1,13 @@
 """Importance-sampling pricing of illiquid alt-coin OTC derivatives.
 
-This package exposes a small stdlib HTTP API (see :mod:`api`) that prices
-OTC derivatives via importance-sampling Monte Carlo using a live (or mock)
-Binance L2 order-book feed for spot discovery.
+Self-contained system for pricing illiquid alt-coin OTC derivatives via
+importance-sampling Monte Carlo, resilient to upstream datafeed drops, with a
+stdlib HTTP API hooked to real Binance L2 depth and a deterministic mock
+fallback.
+
+Import submodules directly:
+    feeds   -- order-book L1/L2 snapshots + datafeed-drop-resilient index price.
+    sampler -- tilted GBM sampling, likelihood-ratio weights, ESS, self-normalised IS.
+    pricer  -- analytic Black-Scholes reference plus plain-MC and IS pricers.
+    api     -- dependency-free stdlib HTTP pricing service.
 """
