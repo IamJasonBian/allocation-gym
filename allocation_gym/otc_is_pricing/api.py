@@ -111,32 +111,35 @@ class PricingService:
 
     def __init__(self, feed: Any | None = None, default_sigma: float = DEFAULT_SIGMA,
                  stale_max_age_s: float = STALE_MAX_AGE_S):
-        self.feed = feed if feed is not None else BinanceDepthFeed()
+        self.feed = feed if feed is not None else BinanceDepthFeed("BTCUSDT")
         self.default_sigma = default_sigma
         self.stale_max_age_s = stale_max_age_s
 
     # -- feed-backed endpoints --------------------------------------------
 
     def get_book(self, symbol: str) -> dict[str, Any]:
-        snap = self.feed.get_book(symbol)
+        snap = self.feed.snapshot(symbol)
         return _snapshot_to_dict(snap)
 
     def feed_status(self, symbol: str, now: Optional[float] = None) -> dict[str, Any]:
         if now is None:
             now = time.time()
-        snap = self.feed.get_book(symbol)
+        snap = self.feed.snapshot(symbol)
         age = max(now - snap.ts, 0.0)
         try:
             stale = snap.is_stale(now, self.stale_max_age_s)
         except Exception:
             stale = age > self.stale_max_age_s
-        # "datafeed_drop": we consider the feed dropped if the live source could
-        # not be reached and we are serving a mock book, or the book is stale.
-        datafeed_drop = bool(stale) or snap.source == "mock"
+        # The TRUE datafeed-drop signal comes from the index builder's
+        # staleness logic; a mock-but-fresh book is NOT a drop. ``source`` and
+        # ``stale`` are reported separately so clients can distinguish them.
         try:
-            index_price = build_index_price(snap)
+            idx = build_index_price([snap], now, self.stale_max_age_s)
+            index_price: Optional[float] = idx.price
+            datafeed_drop = bool(idx.datafeed_drop)
         except Exception:
             index_price = None
+            datafeed_drop = bool(stale)
         return {
             "source": snap.source,
             "age_s": age,
@@ -172,8 +175,10 @@ class PricingService:
 
         if K <= 0:
             raise PricingError("'K' must be positive")
-        if T < 0:
-            raise PricingError("'T' must be non-negative")
+        # The pricer raises ValueError on T <= 0 (a degenerate vanilla); reject
+        # it cleanly as a 400 rather than letting it surface as a 500.
+        if T <= 0:
+            raise PricingError("'T' must be positive")
 
         method = body.get("method") or DEFAULT_METHOD
         if not isinstance(method, str):
@@ -209,10 +214,11 @@ class PricingService:
         except (TypeError, ValueError) as exc:
             raise PricingError(f"invalid 'seed': {exc}") from exc
 
-        # Spot from the feed micro-price.
-        snap = self.feed.get_book(symbol)
+        # Spot from the feed via the datafeed-drop-resilient index price.
+        snap = self.feed.snapshot(symbol)
         try:
-            spot = build_index_price(snap)
+            idx = build_index_price([snap], time.time(), self.stale_max_age_s)
+            spot = idx.price
         except Exception as exc:
             raise PricingError(f"cannot derive spot from feed: {exc}") from exc
 
@@ -328,7 +334,8 @@ def main(argv: Optional[list[str]] = None) -> int:
     logging.basicConfig(level=getattr(logging, args.log_level.upper(), logging.INFO),
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
 
-    feed = MockL2Feed() if args.feed == "mock" else BinanceDepthFeed()
+    feed = (MockL2Feed(seed=0, mid0=30000.0, sigma=0.02) if args.feed == "mock"
+            else BinanceDepthFeed("BTCUSDT"))
     service = PricingService(feed=feed, default_sigma=args.sigma)
     server = build_server(args.host, args.port, service)
     logger.info("OTC IS pricing API listening on http://%s:%d (feed=%s)",

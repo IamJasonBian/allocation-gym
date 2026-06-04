@@ -1,36 +1,32 @@
 """Self-contained fallback L2 order-book feed.
 
-Minimal reference implementation conforming to the frozen feed interfaces so
-that the HTTP API can boot standalone before the real ``feeds`` module is
-merged. Provides a mock feed and a best-effort Binance depth fetch (urllib)
-that degrades to the mock feed on any error.
+Minimal reference implementation conforming to the canonical ``feeds`` module
+interface so the HTTP API can boot standalone before the real ``feeds`` module
+is merged. Provides a deterministic mock feed and a best-effort Binance depth
+fetch (urllib) that degrades to the mock feed on any error.
 
-Frozen interfaces:
-    BookLevel, OrderBookSnapshot, BinanceDepthFeed, MockL2Feed,
-    build_index_price
+Canonical interface mirrored here:
+    BookLevel, OrderBookSnapshot (mid/microprice/is_stale), IndexResult,
+    MockL2Feed(seed, mid0, sigma, drop_after=None).snapshot(symbol),
+    BinanceDepthFeed(symbol, fallback=None, timeout=3.0).snapshot(symbol),
+    build_index_price(snaps, now, max_age_s, last_good=None) -> IndexResult
 """
 
 from __future__ import annotations
 
 import json
 import logging
+import statistics
 import time
 import urllib.request
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
+
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
-BINANCE_DEPTH_URL = "https://api.binance.com/api/v3/depth"
-
-# Rough reference mid-prices used to seed the mock feed for common symbols.
-_MOCK_MIDS: dict[str, float] = {
-    "BTCUSDT": 100_000.0,
-    "ETHUSDT": 3_500.0,
-    "SOLUSDT": 150.0,
-    "DOGEUSDT": 0.15,
-}
-_DEFAULT_MID = 100.0
+BINANCE_DEPTH_URL = "https://api.binance.com/api/v3/depth?symbol={sym}&limit=20"
 
 
 @dataclass
@@ -53,114 +49,176 @@ class OrderBookSnapshot:
 
     @property
     def mid(self) -> float:
-        """Best-bid/best-ask midpoint."""
-        if not self.bids or not self.asks:
-            raise ValueError("order book has empty side; cannot compute mid")
-        return 0.5 * (self.bids[0].price + self.asks[0].price)
+        """Best-bid/best-ask midpoint.
+
+        Guards empty sides: returns the other side's best price, or 0.0 when
+        both sides are empty, so it never raises IndexError.
+        """
+        if self.bids and self.asks:
+            return 0.5 * (self.bids[0].price + self.asks[0].price)
+        if self.bids:
+            return self.bids[0].price
+        if self.asks:
+            return self.asks[0].price
+        return 0.0
 
     @property
     def microprice(self) -> float:
         """Size-weighted micro-price using the top of book.
 
-        Weights the best ask by the bid size and vice versa, so the price is
-        pulled toward the thicker side (the standard micro-price definition).
-        Falls back to the mid when top-of-book sizes are degenerate.
+        Weights the best bid price by the ask size and vice versa, so the price
+        leans toward the side with more resting liquidity on the opposite book.
+        Falls back to :attr:`mid` when sizes are degenerate or a side is empty.
         """
         if not self.bids or not self.asks:
-            raise ValueError("order book has empty side; cannot compute microprice")
+            return self.mid
         bid = self.bids[0]
         ask = self.asks[0]
         total = bid.size + ask.size
-        if total <= 0:
+        if total <= 0.0:
             return self.mid
-        return (ask.price * bid.size + bid.price * ask.size) / total
+        return (bid.price * ask.size + ask.price * bid.size) / total
 
     def is_stale(self, now: float, max_age_s: float) -> bool:
         """True if the snapshot is older than ``max_age_s`` seconds."""
         return (now - self.ts) > max_age_s
 
 
-def _mock_mid_for(symbol: str) -> float:
-    return _MOCK_MIDS.get(symbol.upper(), _DEFAULT_MID)
+@dataclass
+class IndexResult:
+    """Result of an index-price computation."""
+
+    price: float
+    source: str
+    datafeed_drop: bool
+    n_fresh: int
 
 
-def _build_snapshot(symbol: str, mid: float, source: str, ts: Optional[float] = None,
-                    spread_bps: float = 2.0, levels: int = 5) -> OrderBookSnapshot:
-    """Construct a synthetic but plausible snapshot around ``mid``."""
-    if ts is None:
-        ts = time.time()
-    half_spread = mid * (spread_bps / 1e4) / 2.0
+def _synthetic_depth(mid: float, rng: np.random.Generator, *, n_levels: int = 20,
+                     tick_frac: float = 1e-4, base_size: float = 5.0,
+                     decay: float = 0.35) -> tuple[list[BookLevel], list[BookLevel]]:
+    """Build synthetic exponential-decay depth around ``mid``, fully from ``rng``."""
+    tick = mid * tick_frac
     bids: list[BookLevel] = []
     asks: list[BookLevel] = []
-    tick = max(mid * 1e-4, 1e-8)
-    for i in range(levels):
-        bid_px = mid - half_spread - i * tick
-        ask_px = mid + half_spread + i * tick
-        size = 1.0 + i  # deeper levels carry more size
-        bids.append(BookLevel(price=bid_px, size=size))
-        asks.append(BookLevel(price=ask_px, size=size))
-    return OrderBookSnapshot(symbol=symbol.upper(), ts=ts, bids=bids, asks=asks, source=source)
+    for i in range(n_levels):
+        decay_factor = float(np.exp(-decay * i))
+        bid_jitter = 0.85 + 0.30 * float(rng.random())
+        ask_jitter = 0.85 + 0.30 * float(rng.random())
+        bids.append(BookLevel(price=mid - tick * (i + 1), size=base_size * decay_factor * bid_jitter))
+        asks.append(BookLevel(price=mid + tick * (i + 1), size=base_size * decay_factor * ask_jitter))
+    return bids, asks
 
 
 class MockL2Feed:
-    """Deterministic mock L2 feed that never touches the network."""
+    """Deterministic mock L2 feed with GBM mid and synthetic depth.
 
-    source_name = "mock"
+    Args:
+        seed: Seed for the internal numpy generator.
+        mid0: Initial mid price.
+        sigma: Per-step lognormal volatility of the GBM mid.
+        drop_after: If set, snapshots after this many calls are stale (their
+            ``ts`` stops advancing) to simulate an upstream datafeed drop.
+    """
 
-    def __init__(self, mids: Optional[dict[str, float]] = None, spread_bps: float = 2.0):
-        self._mids = dict(_MOCK_MIDS)
-        if mids:
-            self._mids.update({k.upper(): v for k, v in mids.items()})
-        self.spread_bps = spread_bps
+    def __init__(self, seed: int, mid0: float, sigma: float,
+                 drop_after: Optional[int] = None) -> None:
+        self.seed = int(seed)
+        self.mid0 = float(mid0)
+        self.sigma = float(sigma)
+        self.drop_after = drop_after
+        self._rng = np.random.default_rng(self.seed)
+        self._mid = float(mid0)
+        self._step = 0
+        # Anchor the synthetic clock to wall time so fresh snapshots read fresh
+        # against a real ``time.time()`` "now" in the API. One step == one sec.
+        self._t0 = time.time()
+        self._last_fresh_ts = self._t0
+        self.source = "mock"
 
-    def get_book(self, symbol: str) -> OrderBookSnapshot:
-        """Return a fresh mock snapshot for ``symbol``."""
-        mid = self._mids.get(symbol.upper(), _DEFAULT_MID)
-        return _build_snapshot(symbol, mid, source=self.source_name, spread_bps=self.spread_bps)
+    def snapshot(self, symbol: str = "ALTUSDT") -> OrderBookSnapshot:
+        """Produce the next order-book snapshot for ``symbol``."""
+        is_dropped = self.drop_after is not None and self._step >= self.drop_after
+        if not is_dropped:
+            z = float(self._rng.standard_normal())
+            drift = -0.5 * self.sigma * self.sigma
+            self._mid *= float(np.exp(drift + self.sigma * z))
+            ts = self._t0 + self._step
+            self._last_fresh_ts = ts
+        else:
+            ts = self._last_fresh_ts
+        bids, asks = _synthetic_depth(self._mid, self._rng)
+        self._step += 1
+        return OrderBookSnapshot(symbol=symbol.upper(), ts=ts, bids=bids, asks=asks,
+                                 source=self.source)
 
 
 class BinanceDepthFeed:
     """Best-effort Binance L2 depth feed with mock fallback.
 
     Fetches the REST depth endpoint via :mod:`urllib`. On any network/parse
-    error it logs and returns a mock snapshot so callers always get a book.
+    error it logs and returns a mock snapshot (tagged ``source="mock"``).
+
+    Args:
+        symbol: Trading symbol, e.g. ``"BTCUSDT"``.
+        fallback: Optional mock feed to use on error.
+        timeout: HTTP request timeout in seconds.
     """
 
-    source_name = "binance"
+    def __init__(self, symbol: str, fallback: Optional[MockL2Feed] = None,
+                 timeout: float = 3.0) -> None:
+        self.symbol = symbol.upper()
+        self.timeout = float(timeout)
+        self._fallback = fallback if fallback is not None else MockL2Feed(
+            seed=0, mid0=100.0, sigma=0.5)
 
-    def __init__(self, limit: int = 10, timeout: float = 3.0,
-                 fallback: Optional[MockL2Feed] = None):
-        self.limit = limit
-        self.timeout = timeout
-        self._fallback = fallback or MockL2Feed()
-
-    def _fetch(self, symbol: str) -> OrderBookSnapshot:
-        url = f"{BINANCE_DEPTH_URL}?symbol={symbol.upper()}&limit={self.limit}"
-        req = urllib.request.Request(url, headers={"User-Agent": "otc-is-pricing/0"})
+    def _fetch(self, sym: str) -> dict:
+        url = BINANCE_DEPTH_URL.format(sym=sym)
+        req = urllib.request.Request(url, headers={"User-Agent": "allocation_gym-otc"})
         with urllib.request.urlopen(req, timeout=self.timeout) as resp:  # noqa: S310
-            payload = json.loads(resp.read().decode("utf-8"))
-        bids = [BookLevel(price=float(p), size=float(q)) for p, q in payload.get("bids", [])]
-        asks = [BookLevel(price=float(p), size=float(q)) for p, q in payload.get("asks", [])]
-        if not bids or not asks:
-            raise ValueError("empty depth payload")
-        return OrderBookSnapshot(
-            symbol=symbol.upper(), ts=time.time(), bids=bids, asks=asks,
-            source=self.source_name,
-        )
+            return json.loads(resp.read())
 
-    def get_book(self, symbol: str) -> OrderBookSnapshot:
-        """Return a live Binance snapshot, or a mock snapshot on failure."""
+    def snapshot(self, symbol: Optional[str] = None) -> OrderBookSnapshot:
+        """Return a live Binance snapshot, or a mock snapshot on any failure."""
+        sym = (symbol or self.symbol).upper()
         try:
-            return self._fetch(symbol)
+            data = self._fetch(sym)
+            bids = [BookLevel(price=float(px), size=float(sz)) for px, sz in data["bids"]]
+            asks = [BookLevel(price=float(px), size=float(sz)) for px, sz in data["asks"]]
+            if not bids or not asks:
+                raise ValueError("empty book from binance")
+            return OrderBookSnapshot(symbol=sym, ts=time.time(), bids=bids, asks=asks,
+                                     source="binance")
         except Exception as exc:  # pragma: no cover - network dependent
-            logger.warning("Binance depth fetch failed for %s (%s); using mock", symbol, exc)
-            return self._fallback.get_book(symbol)
+            logger.warning("Binance depth fetch failed for %s (%s); using mock", sym, exc)
+            snap = self._fallback.snapshot(sym)
+            snap.source = "mock"
+            return snap
 
 
-def build_index_price(snapshot: OrderBookSnapshot) -> float:
-    """Derive a robust index price from a snapshot.
+def build_index_price(snaps: list[OrderBookSnapshot], now: float, max_age_s: float,
+                      last_good: Optional[float] = None) -> IndexResult:
+    """Build a datafeed-drop-resilient index price from order-book snapshots.
 
-    Uses the micro-price (size-weighted top of book), which is resilient to a
-    one-sided thinning of the book that would skew a naive mid.
+    The index is the median micro-price of all *fresh* snapshots. If every
+    snapshot is stale this signals a datafeed drop: ``datafeed_drop=True`` and
+    the price falls back to ``last_good`` if given, else the micro-price of the
+    most recent snapshot.
+
+    Raises:
+        ValueError: If ``snaps`` is empty.
     """
-    return snapshot.microprice
+    if not snaps:
+        raise ValueError("build_index_price requires at least one snapshot")
+    fresh = [s for s in snaps if not s.is_stale(now, max_age_s)]
+    if fresh:
+        price = float(statistics.median(s.microprice for s in fresh))
+        return IndexResult(price=price, source="index", datafeed_drop=False,
+                           n_fresh=len(fresh))
+    if last_good is not None:
+        price = float(last_good)
+    else:
+        most_recent = max(snaps, key=lambda s: s.ts)
+        price = float(most_recent.microprice)
+    return IndexResult(price=price, source="reconstructed", datafeed_drop=True,
+                       n_fresh=0)

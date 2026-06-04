@@ -17,10 +17,16 @@ import pytest
 
 from allocation_gym.otc_is_pricing._fallback_feed import (
     BookLevel,
+    IndexResult,
     MockL2Feed,
     OrderBookSnapshot,
     build_index_price,
 )
+
+
+def _mock_feed():
+    """Deterministic mock feed at a BTC-ish mid for the API tests."""
+    return MockL2Feed(seed=0, mid0=30000.0, sigma=0.02)
 from allocation_gym.otc_is_pricing._fallback_pricer import (
     bs_price,
     price_is,
@@ -36,7 +42,7 @@ from allocation_gym.otc_is_pricing.api import PricingService, build_server
 
 @pytest.fixture
 def server():
-    service = PricingService(feed=MockL2Feed())
+    service = PricingService(feed=_mock_feed())
     srv = build_server("127.0.0.1", 0, service)  # port 0 -> ephemeral
     thread = threading.Thread(target=srv.serve_forever, daemon=True)
     thread.start()
@@ -89,13 +95,37 @@ def test_snapshot_is_stale():
     assert snap.is_stale(now=103.0, max_age_s=5.0) is False
 
 
-def test_mock_feed_known_symbol():
-    feed = MockL2Feed()
-    snap = feed.get_book("BTCUSDT")
+def test_mock_feed_snapshot():
+    feed = _mock_feed()
+    snap = feed.snapshot("BTCUSDT")
     assert snap.source == "mock"
+    assert snap.symbol == "BTCUSDT"
     assert snap.bids and snap.asks
     assert snap.bids[0].price < snap.asks[0].price
-    assert build_index_price(snap) > 0
+    idx = build_index_price([snap], now=snap.ts, max_age_s=5.0)
+    assert isinstance(idx, IndexResult)
+    assert idx.price > 0
+    assert idx.datafeed_drop is False
+
+
+def test_build_index_price_datafeed_drop():
+    feed = _mock_feed()
+    snap = feed.snapshot("BTCUSDT")
+    # "now" far past the snapshot ts -> all stale -> datafeed drop.
+    idx = build_index_price([snap], now=snap.ts + 100.0, max_age_s=5.0)
+    assert idx.datafeed_drop is True
+    assert idx.n_fresh == 0
+    assert idx.price > 0
+
+
+def test_snapshot_mid_empty_side():
+    # Empty-side guard: mid/microprice never raise IndexError.
+    snap = OrderBookSnapshot(symbol="X", ts=0.0, source="mock",
+                             bids=[], asks=[BookLevel(101.0, 1.0)])
+    assert snap.mid == 101.0
+    assert snap.microprice == 101.0
+    empty = OrderBookSnapshot(symbol="X", ts=0.0, source="mock", bids=[], asks=[])
+    assert empty.mid == 0.0
 
 
 # --------------------------------------------------------------------------
@@ -159,8 +189,8 @@ def test_feed_status(server):
     assert body["source"] == "mock"
     assert body["age_s"] >= 0
     assert body["stale"] is False
-    # mock source counts as a datafeed drop signal
-    assert body["datafeed_drop"] is True
+    # A mock-but-fresh book is NOT a datafeed drop; only staleness flags a drop.
+    assert body["datafeed_drop"] is False
     assert body["index_price"] > 0
 
 
@@ -235,8 +265,8 @@ def test_unknown_route_404(server):
 
 
 def test_service_price_direct():
-    svc = PricingService(feed=MockL2Feed())
-    out = svc.price({"symbol": "BTCUSDT", "kind": "call", "K": 100000, "T": 0.1,
+    svc = PricingService(feed=_mock_feed())
+    out = svc.price({"symbol": "BTCUSDT", "kind": "call", "K": 30000, "T": 0.1,
                      "r": 0.0, "n_paths": 5000})
     assert out["price"] >= 0
     assert "bs_reference" in out
@@ -244,7 +274,7 @@ def test_service_price_direct():
 
 
 def test_service_feed_status_stale_flag():
-    svc = PricingService(feed=MockL2Feed(), stale_max_age_s=0.0)
+    svc = PricingService(feed=_mock_feed(), stale_max_age_s=0.0)
     # now far in the future forces staleness
     st = svc.feed_status("BTCUSDT", now=2_000_000_000.0)
     assert st["stale"] is True

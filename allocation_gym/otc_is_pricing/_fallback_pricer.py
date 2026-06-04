@@ -39,20 +39,28 @@ class PriceResult:
 
 
 def bs_price(S: float, K: float, T: float, r: float, sigma: float, kind: str) -> float:
-    """Black-Scholes price of a European call/put.
+    """Black-Scholes price of a European call/put/digital.
 
-    Handles the degenerate ``T <= 0`` or ``sigma <= 0`` cases by returning the
-    discounted intrinsic value.
+    ``kind="digital"`` prices a cash-or-nothing (call-style) digital paying 1
+    when ``ST > K``: ``exp(-rT) * N(d2)``. Handles the degenerate ``T <= 0`` or
+    ``sigma <= 0`` cases by returning the discounted intrinsic value.
     """
     kind = kind.lower()
-    if kind not in ("call", "put"):
+    if kind not in ("call", "put", "digital"):
         raise ValueError(f"unsupported kind: {kind!r}")
     if T <= 0 or sigma <= 0:
         fwd = S * math.exp(r * T) if T > 0 else S
-        intrinsic = max(fwd - K, 0.0) if kind == "call" else max(K - fwd, 0.0)
+        if kind == "digital":
+            intrinsic = 1.0 if fwd > K else 0.0
+        elif kind == "call":
+            intrinsic = max(fwd - K, 0.0)
+        else:
+            intrinsic = max(K - fwd, 0.0)
         return math.exp(-r * T) * intrinsic
     d1 = (math.log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * math.sqrt(T))
     d2 = d1 - sigma * math.sqrt(T)
+    if kind == "digital":
+        return math.exp(-r * T) * _norm_cdf(d2)
     if kind == "call":
         return S * _norm_cdf(d1) - K * math.exp(-r * T) * _norm_cdf(d2)
     return K * math.exp(-r * T) * _norm_cdf(-d2) - S * _norm_cdf(-d1)
@@ -109,8 +117,8 @@ def price_is(S: float, K: float, T: float, r: float, sigma: float, kind: str,
     The ``drift_tilt`` method shifts the sampling distribution of the terminal
     Brownian increment by a constant ``mu`` so that paths land near the payoff
     region (deep OTM options), reducing variance. The likelihood ratio
-    re-weights each sample back to the physical measure. Other ``method``
-    values fall back to plain MC.
+    re-weights each sample back to the physical measure. Unknown ``method``
+    values raise ``ValueError``.
     """
     kind = kind.lower()
     barrier = kw.get("barrier")
@@ -119,10 +127,7 @@ def price_is(S: float, K: float, T: float, r: float, sigma: float, kind: str,
     disc = math.exp(-r * T)
 
     if method != "drift_tilt":
-        logger.debug("IS method %r not specialised; falling back to plain MC", method)
-        res = price_plain_mc(S, K, T, r, sigma, kind, n, seed, **kw)
-        return PriceResult(price=res.price, std_error=res.std_error, ess=res.ess,
-                           n_paths=res.n_paths, method=method)
+        raise ValueError(f"unknown IS method: {method!r}")
 
     sqrtT = math.sqrt(T)
     drift = (r - 0.5 * sigma * sigma) * T
@@ -130,8 +135,9 @@ def price_is(S: float, K: float, T: float, r: float, sigma: float, kind: str,
 
     # Choose the tilt so the drifted distribution is centred on the strike.
     # Solve S*exp(drift + diff*mu) = K  =>  mu = (log(K/S) - drift) / diff.
+    # Clamp to a non-negative tilt (only push toward the OTM tail).
     if diff > 0:
-        mu = (math.log(K / S) - drift) / diff
+        mu = max((math.log(K / S) - drift) / diff, 0.0)
     else:
         mu = 0.0
 
