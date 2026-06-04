@@ -62,6 +62,68 @@ class TestOrderBookSnapshot:
         s = _snap(ts=0.0, bid_px=99.0, bid_sz=0.0, ask_px=101.0, ask_sz=0.0)
         assert s.microprice == pytest.approx(100.0)
 
+    def test_one_sided_and_empty_books_do_not_raise(self) -> None:
+        """Degenerate one-sided / empty books must not raise on mid/microprice.
+
+        A snapshot with an empty side reaches :func:`build_index_price`'s
+        all-stale reconstruction branch (which reads ``microprice``); the
+        properties must degrade gracefully instead of raising ``IndexError``.
+        """
+        import math
+
+        # Empty bids: mid / microprice fall back to the best ask price.
+        empty_bids = OrderBookSnapshot(
+            symbol="ALTUSDT",
+            ts=0.0,
+            bids=[],
+            asks=[BookLevel(price=101.0, size=2.0)],
+            source="mock",
+        )
+        assert empty_bids.mid == pytest.approx(101.0)
+        assert empty_bids.microprice == pytest.approx(101.0)
+
+        # Empty asks: mid / microprice fall back to the best bid price.
+        empty_asks = OrderBookSnapshot(
+            symbol="ALTUSDT",
+            ts=0.0,
+            bids=[BookLevel(price=99.0, size=2.0)],
+            asks=[],
+            source="mock",
+        )
+        assert empty_asks.mid == pytest.approx(99.0)
+        assert empty_asks.microprice == pytest.approx(99.0)
+
+        # Fully empty book: both default to 0.0, still finite.
+        empty_both = OrderBookSnapshot(
+            symbol="ALTUSDT",
+            ts=0.0,
+            bids=[],
+            asks=[],
+            source="mock",
+        )
+        assert empty_both.mid == pytest.approx(0.0)
+        assert empty_both.microprice == pytest.approx(0.0)
+        assert math.isfinite(empty_both.microprice)
+
+    def test_build_index_price_all_stale_one_sided_book(self) -> None:
+        """All-stale one-sided book yields an IndexResult, not an IndexError."""
+        import math
+
+        one_sided = OrderBookSnapshot(
+            symbol="ALTUSDT",
+            ts=0.0,
+            bids=[],
+            asks=[BookLevel(price=101.0, size=2.0)],
+            source="mock",
+        )
+        res = build_index_price([one_sided], now=1_000_000.0, max_age_s=1.0)
+        assert isinstance(res, IndexResult)
+        assert res.datafeed_drop is True
+        assert res.n_fresh == 0
+        assert res.source == "reconstructed"
+        assert math.isfinite(res.price)
+        assert res.price == pytest.approx(101.0)
+
     def test_is_stale(self) -> None:
         s = _snap(ts=100.0, bid_px=99.0, bid_sz=1.0, ask_px=101.0, ask_sz=1.0)
         assert s.is_stale(now=106.0, max_age_s=5.0) is True

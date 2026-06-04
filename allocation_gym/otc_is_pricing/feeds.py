@@ -73,8 +73,19 @@ class OrderBookSnapshot:
 
     @property
     def mid(self) -> float:
-        """Mid price: ``(best_bid + best_ask) / 2``."""
-        return (self.bids[0].price + self.asks[0].price) / 2.0
+        """Mid price: ``(best_bid + best_ask) / 2``.
+
+        Robust to a one-sided or empty book: if both sides are present the
+        usual mid of the touch is returned; if only one side has levels its
+        best price is returned; if both sides are empty ``0.0`` is returned.
+        """
+        if self.bids and self.asks:
+            return (self.bids[0].price + self.asks[0].price) / 2.0
+        if self.bids:
+            return self.bids[0].price
+        if self.asks:
+            return self.asks[0].price
+        return 0.0
 
     @property
     def microprice(self) -> float:
@@ -85,8 +96,12 @@ class OrderBookSnapshot:
         (and vice versa) leans the micro-price toward the side with more
         resting liquidity on the *opposite* book, the standard convention.
 
-        Falls back to :attr:`mid` if the combined top-of-book size is zero.
+        Falls back to :attr:`mid` if either side is empty or the combined
+        top-of-book size is non-positive (which keeps a degenerate / one-sided
+        book from raising and lets it degrade to the robust :attr:`mid`).
         """
+        if not self.bids or not self.asks:
+            return self.mid
         best_bid = self.bids[0]
         best_ask = self.asks[0]
         bid_sz = best_bid.size
