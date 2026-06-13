@@ -30,9 +30,7 @@ from allocation_gym.optimal_bands import calibrate_ou, compute_optimal_bands, Ba
 # Data download — Twelve Data API (primary) + Yahoo Finance (fallback)
 # ---------------------------------------------------------------------------
 
-TWELVE_DATA_API_KEY = os.getenv(
-    "TWELVE_DATA_API_KEY", "f2c57fbb0a794024b0defff74af45686"
-)
+TWELVE_DATA_API_KEY = os.getenv("TWELVE_DATA_API_KEY")
 
 # Map display symbols to Twelve Data symbols
 TWELVE_DATA_SYMBOL_MAP = {
@@ -46,6 +44,11 @@ TWELVE_DATA_SYMBOL_MAP = {
 
 def download_twelve_data(symbol: str, outputsize: int = 800) -> List[Dict]:
     """Download daily OHLCV via Twelve Data time_series API."""
+    if not TWELVE_DATA_API_KEY:
+        raise RuntimeError(
+            "TWELVE_DATA_API_KEY environment variable is not set. "
+            "Export it before running this script."
+        )
     td_symbol = TWELVE_DATA_SYMBOL_MAP.get(symbol, symbol)
     url = (
         f"https://api.twelvedata.com/time_series"
