@@ -1,0 +1,144 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{bm}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{booktabs}
+
+\title{Relevance Model: Math Spec}
+\author{\texttt{allocation\_agent.ml}}
+\date{}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Ind}{\mathbf{1}}
+\newcommand{\Pos}{\mathcal{P}}
+\newcommand{\Neg}{\mathcal{N}}
+
+\begin{document}
+\maketitle
+
+\noindent We learn $p_\theta(y=1 \mid \text{job}) \in [0,1]$, the probability a
+\textsc{JobCandidate} reaches mid-stage (callback / screener / offer) versus
+rejection / no-response.
+
+\section{Featurization}
+A job $j$ becomes a fixed-length vector $\bm{x}(j) \in \R^{d}$ with
+$d = 64 + 7 + 4 = 75$, the concatenation of three blocks.
+
+\paragraph{Title (hashed bag-of-words, $64$ dims).}
+Tokenize the title with the regex \verb|[A-Za-z0-9]+|, lowercase to get
+$T(j) = (t_1, \dots, t_m)$. With $h: \Sigma^* \to \{0,\dots,63\}$ a fixed
+\textsc{Blake2b}-derived hash, define raw counts
+\[
+  c_k(j) \;=\; \sum_{i=1}^{m} \Ind\!\left[\, h(t_i) = k \,\right],
+  \qquad k = 0, \dots, 63,
+\]
+and $L_2$-normalize to remove length effects:
+\[
+  \bm{x}^{\text{title}}_k(j)
+    \;=\; \frac{c_k(j)}{\max\!\Big(1,\ \sqrt{\sum_{\ell} c_\ell(j)^2}\Big)}.
+\]
+
+\paragraph{ATS (one-hot, $7$ dims).}
+With vocabulary
+\[
+  \mathcal{A} = (\text{greenhouse},\ \text{lever},\ \text{ashby},\ \text{workday},\
+                  \text{workable},\ \text{icims},\ \text{unknown})
+\]
+and any out-of-vocabulary value mapped to \emph{unknown},
+\[
+  \bm{x}^{\text{ats}}_a(j) \;=\; \Ind\!\left[\,\mathcal{A}_a = \text{ats}(j)\,\right],
+  \qquad a = 0, \dots, 6.
+\]
+
+\paragraph{Numeric ($4$ dims).}
+Let $\Delta(j) = \max(0, t_{\text{now}} - t_{\text{posted}}(j))$ in seconds and
+$\Delta_d(j) = \Delta(j)/86400$ in days. Each entry is squashed to roughly
+$[0,1]$:
+\[
+  \bm{x}^{\text{num}}(j) =
+    \begin{pmatrix}
+      \min(|\text{title}(j)|,\, 200)\,/\,200 \\[2pt]
+      \min(\Delta_d(j),\, 365)\,/\,365 \\[2pt]
+      \mathrm{clip}\!\big(p_{\text{cb}}(j),\,0,\,1\big) \\[2pt]
+      \min\!\big(\log(1+\Delta_d(j))\,/\,\log(1+365),\ 1.5\big)
+    \end{pmatrix},
+\]
+where $p_{\text{cb}}(j)$ is the upstream prior \verb|expected_callback_prob|.
+
+\paragraph{Final vector.}
+$\bm{x}(j) = \bm{x}^{\text{title}}(j) \,\Vert\, \bm{x}^{\text{ats}}(j) \,\Vert\, \bm{x}^{\text{num}}(j) \in \R^{75}.$
+
+\section{Labels}
+The mapping $\ell(\cdot) \in \{0,1\}$ collapses heterogeneous status strings:
+\[
+  \ell(s) =
+    \begin{cases}
+      1 & s \in \{\text{callback},\ \text{screener},\ \text{offer}\}\ \text{or}\ s \in \{1, \text{true}, \text{yes}\},\\
+      0 & s \in \{\text{rejection},\ \text{no\_response},\ \text{none}\}\ \text{or}\ s \in \{0, \text{false}, \text{no}\}.
+    \end{cases}
+\]
+
+\section{Model}
+A two-hidden-layer MLP with ReLU and dropout produces a single logit
+$z_\theta(\bm{x}) \in \R$:
+\begin{align*}
+  \bm{h}_1 &= \mathrm{Dropout}_p\!\big(\mathrm{ReLU}(\bm{W}_1 \bm{x} + \bm{b}_1)\big), & \bm{W}_1 &\in \R^{H \times d},\\
+  \bm{h}_2 &= \mathrm{Dropout}_p\!\big(\mathrm{ReLU}(\bm{W}_2 \bm{h}_1 + \bm{b}_2)\big), & \bm{W}_2 &\in \R^{H \times H},\\
+  z_\theta(\bm{x}) &= \bm{w}_3^{\!\top} \bm{h}_2 + b_3, & \bm{w}_3 &\in \R^{H},
+\end{align*}
+with defaults $d{=}75$, $H{=}64$, $p{=}0.1$. The probability head is
+$p_\theta(y{=}1\mid\bm{x}) = \sigma(z_\theta(\bm{x}))$ where
+$\sigma(z) = (1+e^{-z})^{-1}$.
+
+\section{Loss}
+Class-weighted binary cross-entropy on logits, with positive-class weight
+\[
+  w_{+} \;=\;
+    \begin{cases}
+      |\Neg|/|\Pos| & |\Pos|, |\Neg| > 0,\\
+      1 & \text{otherwise}.
+    \end{cases}
+\]
+For a batch $\{(\bm{x}_i, y_i)\}_{i=1}^{N}$,
+\[
+  \mathcal{L}(\theta)
+    \;=\; \frac{1}{N} \sum_{i=1}^{N}
+        \Big[\, w_{+}\, y_i\, \log\!\big(1 + e^{-z_i}\big)
+              + (1 - y_i)\, \log\!\big(1 + e^{z_i}\big) \,\Big],
+  \qquad z_i := z_\theta(\bm{x}_i).
+\]
+This is the BCE form used by \verb|BCEWithLogitsLoss(pos_weight=w+)| and is
+numerically stable via the log-sum-exp trick.
+
+\section{Optimization}
+Full-batch Adam with $L_2$ weight decay $\lambda$:
+\[
+  \theta \;\leftarrow\; \mathrm{Adam}\!\big(\theta,\; \nabla_\theta \mathcal{L}(\theta) + \lambda\,\theta\big),
+\]
+defaults $\eta = 10^{-2}$, $\lambda = 10^{-4}$, $200$ epochs. Splits use a
+seeded shuffle with validation fraction $0.2$ (at least one row) and degrade
+to no validation if the corpus is too small to spare.
+
+\section{Evaluation}
+Threshold accuracy at $\tau = 0.5$:
+\[
+  \mathrm{Acc} \;=\; \frac{1}{N}\sum_i \Ind\!\big[\Ind[\hat{p}_i \ge \tau] = y_i\big].
+\]
+AUC via the Mann--Whitney $U$ formulation, which is robust to ties:
+\[
+  \mathrm{AUC} \;=\;
+    \frac{1}{|\Pos|\,|\Neg|}
+      \sum_{i \in \Pos}\sum_{j \in \Neg}
+        \Big( \Ind[\hat{p}_i > \hat{p}_j] + \tfrac{1}{2}\Ind[\hat{p}_i = \hat{p}_j] \Big).
+\]
+If either class is empty in the validation split, $\mathrm{AUC}$ is reported
+as $0.5$ (no signal).
+
+\section{Inference}
+At score time the same $\bm{x}(j)$ is built (deterministic hashing keeps
+train / serve parity) and the service returns
+$\hat{p}(j) = \sigma\!\big(z_\theta(\bm{x}(j))\big)$ per job.
+
+\end{document}
