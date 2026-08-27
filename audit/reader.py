@@ -8,12 +8,8 @@ This module hydrates the generated OptionsRecord protobuf from that hash.
 """
 
 import json
-import sys
-import os
 
-# Ensure generated package is importable
-sys.path.insert(0, os.path.dirname(__file__))
-from generated import options_contract_pb2 as pb
+from .generated import options_contract_pb2 as pb
 
 
 def _parse_json(raw, default=None):
