@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520">
+<rect width="900" height="520" fill="#ffffff"/>
+<style>text { font-family: "Helvetica Neue", Arial, sans-serif; }</style>
+<text x="450.0" y="40" text-anchor="middle" font-size="16" font-weight="bold" fill="#222">Gold / BTC Efficient Frontier</text>
+<text x="450.0" y="55" text-anchor="middle" font-size="11" fill="#666">Correlation = 0.23  |  Monthly data Jan 2020 – Dec 2025</text>
+<rect x="80" y="60" width="790.0" height="390" fill="none" stroke="#cccccc" stroke-width="1"/>
+<line x1="80" y1="431.89336038478" x2="870.0" y2="431.89336038478" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="72" y="435.89336038478" text-anchor="end" font-size="11" fill="#555">10.0</text>
+<line x1="80" y1="378.4036264088416" x2="870.0" y2="378.4036264088416" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="72" y="382.4036264088416" text-anchor="end" font-size="11" fill="#555">15.0</text>
+<line x1="80" y1="324.91389243290314" x2="870.0" y2="324.91389243290314" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="72" y="328.91389243290314" text-anchor="end" font-size="11" fill="#555">20.0</text>
+<line x1="80" y1="271.42415845696473" x2="870.0" y2="271.42415845696473" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="72" y="275.42415845696473" text-anchor="end" font-size="11" fill="#555">25.0</text>
+<line x1="80" y1="217.93442448102627" x2="870.0" y2="217.93442448102627" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="72" y="221.93442448102627" text-anchor="end" font-size="11" fill="#555">30.0</text>
+<line x1="80" y1="164.44469050508786" x2="870.0" y2="164.44469050508786" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="72" y="168.44469050508786" text-anchor="end" font-size="11" fill="#555">35.0</text>
+<line x1="80" y1="110.95495652914946" x2="870.0" y2="110.95495652914946" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="72" y="114.95495652914946" text-anchor="end" font-size="11" fill="#555">40.0</text>
+<line x1="81.29078006536284" y1="60" x2="81.29078006536284" y2="450" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="81.29078006536284" y="468" text-anchor="middle" font-size="10" fill="#555">10.0</text>
+<line x1="149.3514073415521" y1="60" x2="149.3514073415521" y2="450" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="149.3514073415521" y="468" text-anchor="middle" font-size="10" fill="#555">15.0</text>
+<line x1="217.41203461774137" y1="60" x2="217.41203461774137" y2="450" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="217.41203461774137" y="468" text-anchor="middle" font-size="10" fill="#555">20.0</text>
+<line x1="285.47266189393065" y1="60" x2="285.47266189393065" y2="450" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="285.47266189393065" y="468" text-anchor="middle" font-size="10" fill="#555">25.0</text>
+<line x1="353.53328917011993" y1="60" x2="353.53328917011993" y2="450" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="353.53328917011993" y="468" text-anchor="middle" font-size="10" fill="#555">30.0</text>
+<line x1="421.5939164463092" y1="60" x2="421.5939164463092" y2="450" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="421.5939164463092" y="468" text-anchor="middle" font-size="10" fill="#555">35.0</text>
+<line x1="489.6545437224985" y1="60" x2="489.6545437224985" y2="450" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="489.6545437224985" y="468" text-anchor="middle" font-size="10" fill="#555">40.0</text>
+<line x1="557.7151709986878" y1="60" x2="557.7151709986878" y2="450" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="557.7151709986878" y="468" text-anchor="middle" font-size="10" fill="#555">45.0</text>
+<line x1="625.775798274877" y1="60" x2="625.775798274877" y2="450" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="625.775798274877" y="468" text-anchor="middle" font-size="10" fill="#555">50.0</text>
+<line x1="693.8364255510663" y1="60" x2="693.8364255510663" y2="450" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="693.8364255510663" y="468" text-anchor="middle" font-size="10" fill="#555">55.0</text>
+<line x1="761.8970528272556" y1="60" x2="761.8970528272556" y2="450" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="761.8970528272556" y="468" text-anchor="middle" font-size="10" fill="#555">60.0</text>
+<line x1="829.9576801034449" y1="60" x2="829.9576801034449" y2="450" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="829.9576801034449" y="468" text-anchor="middle" font-size="10" fill="#555">65.0</text>
+<text x="475.0" y="512" text-anchor="middle" font-size="12" fill="#444">Annualised Volatility (%)</text>
+<text x="16" y="255.0" text-anchor="middle" font-size="12" fill="#444" transform="rotate(-90,16,255.0)">Annualised Return (%)</text>
+<polyline points="103.8,417.9 104.4,414.9 105.3,411.8 106.7,408.8 108.5,405.7 110.7,402.7 113.2,399.6 116.1,396.6 119.4,393.6 122.9,390.5 126.8,387.5 130.9,384.4 135.3,381.4 140.0,378.3 144.8,375.3 149.9,372.2 155.2,369.2 160.7,366.2 166.3,363.1 172.1,360.1 178.0,357.0 184.1,354.0 190.3,350.9 196.6,347.9 203.0,344.8 209.5,341.8 216.1,338.8 222.8,335.7 229.5,332.7 236.4,329.6 243.3,326.6 250.2,323.5 257.3,320.5 264.3,317.4 271.5,314.4 278.7,311.4 285.9,308.3 293.1,305.3 300.5,302.2 307.8,299.2 315.2,296.1 322.6,293.1 330.1,290.1 337.5,287.0 345.0,284.0 352.6,280.9 360.1,277.9 367.7,274.8 375.3,271.8 382.9,268.7 390.6,265.7 398.2,262.7 405.9,259.6 413.6,256.6 421.3,253.5 429.0,250.5 436.8,247.4 444.6,244.4 452.3,241.3 460.1,238.3 467.9,235.3 475.7,232.2 483.5,229.2 491.4,226.1 499.2,223.1 507.1,220.0 514.9,217.0 522.8,213.9 530.7,210.9 538.6,207.9 546.5,204.8 554.4,201.8 562.3,198.7 570.2,195.7 578.1,192.6 586.0,189.6 594.0,186.5 601.9,183.5 609.9,180.5 617.8,177.4 625.8,174.4 633.8,171.3 641.7,168.3 649.7,165.2 657.7,162.2 665.7,159.2 673.7,156.1 681.7,153.1 689.7,150.0 697.7,147.0 705.7,143.9 713.7,140.9 721.7,137.8 729.7,134.8 737.7,131.8 745.8,128.7 753.8,125.7 761.8,122.6 769.8,119.6 777.9,116.5 785.9,113.5" fill="none" stroke="#4a90d9" stroke-width="2.5"/>
+<circle cx="103.8" cy="417.9" r="5" fill="#FFD700" stroke="white" stroke-width="1"/>
+<text x="103.8" y="431.9" text-anchor="middle" font-size="10" fill="#555">0% BTC</text>
+<circle cx="126.8" cy="387.5" r="5" fill="#e8c800" stroke="white" stroke-width="1"/>
+<circle cx="178.0" cy="357.0" r="5" fill="#d1b900" stroke="white" stroke-width="1"/>
+<circle cx="243.3" cy="326.6" r="5" fill="#baab00" stroke="white" stroke-width="1"/>
+<circle cx="315.2" cy="296.1" r="5" fill="#a39c00" stroke="white" stroke-width="1"/>
+<circle cx="390.6" cy="265.7" r="5" fill="#8c8e00" stroke="white" stroke-width="1"/>
+<text x="390.6" y="255.7" text-anchor="middle" font-size="10" fill="#555">50% BTC</text>
+<circle cx="467.9" cy="235.3" r="5" fill="#757f00" stroke="white" stroke-width="1"/>
+<circle cx="546.5" cy="204.8" r="5" fill="#5e7100" stroke="white" stroke-width="1"/>
+<circle cx="625.8" cy="174.4" r="5" fill="#476200" stroke="white" stroke-width="1"/>
+<circle cx="705.7" cy="143.9" r="5" fill="#305400" stroke="white" stroke-width="1"/>
+<circle cx="785.9" cy="113.5" r="5" fill="#f7931a" stroke="white" stroke-width="1"/>
+<text x="785.9" y="103.5" text-anchor="middle" font-size="10" fill="#555">100% BTC</text>
+<circle cx="103.8" cy="417.9" r="7" fill="#e74c3c" stroke="white" stroke-width="1"/>
+<text x="113.8" y="409.9" text-anchor="start" font-size="10" fill="#e74c3c">Min Vol (0% BTC)</text>
+<circle cx="149.9" cy="372.2" r="7" fill="#27ae60" stroke="white" stroke-width="1"/>
+<text x="159.9" y="386.2" text-anchor="start" font-size="10" fill="#27ae60">Max Sharpe (15% BTC, SR=0.74)</text>
+<circle cx="103.8" cy="417.9" r="7" fill="#FFD700" stroke="white" stroke-width="1"/>
+<text x="111.8" y="415.9" text-anchor="start" font-size="11" fill="#b8860b">  100% Gold</text>
+<circle cx="785.9" cy="113.5" r="7" fill="#f7931a" stroke="white" stroke-width="1"/>
+<text x="793.9" y="111.5" text-anchor="start" font-size="11" fill="#f7931a">  100% BTC</text>
+</svg>

@@ -1,0 +1,117 @@
+syntax = "proto3";
+
+package helsinki.options;
+
+option java_package = "com.helsinki.marketdata.options.proto";
+
+// A single options record. Contract, Position, and Order are the same type
+// at different lifecycle stages. Identity + sub-attributes.
+//
+// As a quote:    pricing has bid/ask/mid, greeks populated
+// As an order:   pricing has limit_price/stop_price, side/order_type/status set
+// As a position: pricing has avg_entry, qty/pnl populated
+// All three can coexist on the same record in Redis.
+//
+// Redis layout: one hash per OCC symbol
+//   options:{SYMBOL}
+//     symbol, underlying, expiration, strike, option_type   (flat strings)
+//     pricing   → JSON of Pricing
+//     greeks    → JSON of Greeks
+//     sizing    → JSON of Sizing
+//     pnl       → JSON of PnL
+//     orders    → JSON array of OrderEntry
+//     bars      → JSON array of Bar
+//     side, order_type, status, order_id                    (flat strings)
+//     updated_at                                            (flat string)
+
+message OptionsRecord {
+
+  // ── Identity ──────────────────────────────────────
+  string symbol       = 1;   // OCC symbol, e.g. AAPL250620C00150000
+  string underlying   = 2;   // e.g. AAPL
+  string expiration   = 3;   // e.g. 2025-06-20
+  double strike       = 4;   // e.g. 150.00
+  string option_type  = 5;   // C or P
+
+  // ── Sub-attributes ────────────────────────────────
+  Pricing pricing     = 10;
+  Greeks  greeks      = 11;
+  Sizing  sizing      = 12;
+  PnL     pnl         = 13;
+
+  // ── Order fields (when this record represents an order) ──
+  optional string side         = 20;  // buy / sell
+  optional string order_type   = 21;  // limit / stop / stop_limit / market
+  optional string status       = 22;  // open / filled / partial / cancelled
+  optional string order_id     = 23;
+
+  // ── Multiple orders against this contract ─────────
+  repeated OrderEntry orders   = 30;
+
+  // ── History ───────────────────────────────────────
+  repeated Bar bars            = 40;
+
+  // ── Meta ──────────────────────────────────────────
+  string updated_at   = 50;
+  string created_at   = 51;
+}
+
+// All pricing in one place — market, limit, entry
+message Pricing {
+  optional double bid         = 1;
+  optional double ask         = 2;
+  optional double mid         = 3;
+  optional double spread      = 4;
+  optional double last_price  = 5;
+  optional double limit_price = 6;   // order limit
+  optional double stop_price  = 7;   // order stop
+  optional double avg_entry   = 8;   // position entry
+}
+
+// Greeks + IV grouped together
+message Greeks {
+  optional double delta = 1;
+  optional double gamma = 2;
+  optional double theta = 3;
+  optional double vega  = 4;
+  optional double rho   = 5;
+  optional double iv    = 6;
+}
+
+// Quantities — shares, volume, open interest
+message Sizing {
+  optional int32 qty            = 1;  // position qty (positive=long, negative=short)
+  optional int32 filled_qty     = 2;  // order filled qty
+  optional int64 volume         = 3;  // market volume
+  optional int64 open_interest  = 4;  // market OI
+}
+
+// Profit & loss
+message PnL {
+  optional double unrealized_pl      = 1;
+  optional double unrealized_pl_pct  = 2;
+  optional double market_value       = 3;
+}
+
+// An individual order entry (for the repeated orders field)
+message OrderEntry {
+  string id                      = 1;
+  string side                    = 2;   // buy / sell
+  string order_type              = 3;   // limit / stop / stop_limit / market
+  optional double limit_price    = 4;
+  optional double stop_price     = 5;
+  int32  qty                     = 6;
+  string status                  = 7;   // open / filled / partial / cancelled
+  optional int32  filled_qty     = 8;
+  optional double filled_avg_price = 9;
+  string created_at              = 10;
+}
+
+message Bar {
+  string timestamp = 1;
+  double open      = 2;
+  double high      = 3;
+  double low       = 4;
+  double close     = 5;
+  int64  volume    = 6;
+}

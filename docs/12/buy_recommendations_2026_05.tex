@@ -1,0 +1,339 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{enumitem}
+\usepackage{longtable}
+
+\definecolor{gain}{RGB}{0,128,0}
+\definecolor{loss}{RGB}{200,0,0}
+\definecolor{neutral}{RGB}{80,80,80}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Allocation Engine --- Internal}
+\lhead{Buy Recommendations -- May 2026}
+\rfoot{\thepage}
+
+\title{%
+  \textbf{Buy Recommendations} -- Trailing 3M + Forward 3M \\[4pt]
+  \large Allocation Engine: Current-Market Overlay (May 2026) \\[2pt]
+  \normalsize Variance-Kelly framework + post-rotation regime adjustments
+}
+\author{Allocation Engine Research}
+\date{May 7, 2026}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+% ============================================================
+\section{Executive Summary}
+% ============================================================
+
+This note translates the allocation-gym Variance-Kelly framework into
+concrete buy recommendations for the May--August 2026 window. The
+codebase's prior signals (BTC--IWN negative correlation, IWN-put
+hedging, quarter-Kelly sizing) are re-overlaid on a market that has
+rotated decisively into energy and commodities while small caps and
+BTC have given back gains. VIX has collapsed from a March peak of
+31.05 to 17.39, making both calls and puts structurally cheap.
+
+\begin{table}[H]
+\centering
+\caption{Recommended trade book (May 2026)}
+\begin{tabular}{l l l l r}
+\toprule
+Trade & Direction & Tenor & Conviction & Sizing \%NAV \\
+\midrule
+IWN 3M ATM puts        & \textcolor{loss}{Long Put}  & 3M     & High      & 0.25\% \\
+XLY 3M ATM puts        & \textcolor{loss}{Long Put}  & 3M     & Med--High & 0.25\% \\
+XLE 3M ATM calls       & \textcolor{gain}{Long Call} & 3M     & High      & 0.40\% \\
+IBIT 3M ATM calls      & \textcolor{gain}{Long Call} & 3M     & High      & 0.30\% \\
+EWZ 2--3M OTM calls    & \textcolor{gain}{Long Call} & 2--3M  & Med       & 0.20\% \\
+DBC 3M ATM calls       & \textcolor{gain}{Long Call} & 3M     & Med       & 0.05\% \\
+GLD 3M ATM calls       & \textcolor{gain}{Long Call} & 3M     & Med       & 0.05\% \\
+IBIT spot              & \textcolor{neutral}{Long}   & open   & Med       & 30--45\% w/ hedge \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================
+\section{Codebase Audit Recap}
+% ============================================================
+
+The allocation-gym repository implements a Variance-Kelly backtesting
+framework on top of Backtrader. Core analytics include Yang--Zhang
+volatility, the Variance Ratio (VR), Efficiency Ratio (ER), regime
+classification (CHOP/TREND/MIXED), vol-of-vol, and downside
+semivariance. Four strategies are wired in:
+
+\begin{itemize}[nosep]
+  \item \textbf{momentum} -- enter when VR $\geq$ 1.1, ER $\geq$ 0.4,
+        price $>$ SMA50; exit when price $<$ SMA50 or regime flips to CHOP.
+  \item \textbf{mean\_reversion} -- enter when VR $<$ 0.9 and RSI $<$ 30;
+        exit when RSI $>$ 70.
+  \item \textbf{variance\_kelly} -- Kelly inverse-covariance rebalance,
+        with drift $>$ 5\% triggering re-allocation.
+  \item \textbf{momentum\_dca} -- Ornstein--Uhlenbeck band selection for
+        accumulation.
+\end{itemize}
+
+Position sizing uses a quarter-Kelly sizer (0.25 fraction) with
+downside-semivariance-derived stop distances. Realised YTD P\&L
+(Feb~21 -- Mar~25, 2026) totalled \textcolor{gain}{\textbf{+\$19{,}965}}:
+\$15{,}770 from BTC bracket trading on the Grayscale BTC Mini Trust
+plus \$4{,}195 from options round-trips.
+
+The codebase's central pair signal is the BTC$\leftrightarrow$IWN 30d
+correlation of $+0.61$, with a residual of $+0.28$ after VIX is
+controlled for (i.e.\ VIX explains roughly 48\% of the co-movement).
+On a cost-of-hedge basis, IWN 3M ATM puts run at 4.4\% of spot versus
+15.4\% for BTC puts, a \textbf{3.5$\times$ cheaper hedge} for the same
+underlying risk-off scenario.
+
+\subsection{Realised options round-trips}
+
+\begin{table}[H]
+\centering
+\caption{Closed options round-trips (Feb 21 -- Mar 4, 2026)}
+{\small
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}l r l r r r r}
+\toprule
+Contract & Qty & Dates & Open & Close & P\&L & Return \\
+\midrule
+IWN \$262 Put 3/11      & 10 & 02/26 $\to$ 02/27 & \$3.16  & \$4.96  & \textcolor{gain}{+\$1{,}800} & +57\%  \\
+IWN \$247 Put 3/13      & 10 & 02/27 $\to$ 03/01 & \$1.41  & \$2.86  & \textcolor{gain}{+\$1{,}450} & +103\% \\
+CRWD \$390 Put 3/06     & 1  & 02/25 $\to$ 02/27 & \$21.05 & \$33.30 & \textcolor{gain}{+\$1{,}225} & +58\%  \\
+CRWD \$367.5 Put 3/20   & 1  & 02/27 $\to$ 03/04 & \$19.05 & \$16.25 & \textcolor{loss}{--\$280}    & --15\% \\
+\midrule
+\multicolumn{5}{l}{\textbf{Total Options P\&L}} & \textcolor{gain}{\textbf{+\$4{,}195}} & \\
+\bottomrule
+\end{tabular*}}
+\end{table}
+
+% ============================================================
+\section{Current Market State (May 7, 2026)}
+% ============================================================
+
+\begin{table}[H]
+\centering
+\caption{Snapshot of indicators relative to the codebase's prior analysis window}
+\begin{tabular}{l r l}
+\toprule
+Indicator & Value & Move since codebase analysis \\
+\midrule
+BTC/USD              & \$81{,}022             & \textcolor{loss}{-14\%} from $\sim$\$94K \\
+VIX                  & 17.39                  & \textcolor{loss}{-39\%} from March peak 31.05 \\
+EWT                  & \$94.41                & \textcolor{gain}{+33\%} in 5 weeks (\$70.77 on Apr 2) \\
+EWZ                  & $\sim$\$39             & \textcolor{gain}{+60\%} trailing 1Y \\
+S\&P 500 (Q1)        & -4.3\%                 & growth selloff \\
+Nasdaq 100 (Q1)      & -5.8\%                 & tech leadership broken \\
+XLE Energy (Q1)      & \textcolor{gain}{+37.9\%} & oil +84\%, regime change \\
+DBC Commodities (Q1) & \textcolor{gain}{+29.5\%} & rotation winner \\
+Russell 2000 (IWM)   & broke Jan ATH          & \textcolor{gain}{+8.6\%} in 2 weeks late Q1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+VIX at 31 $\to$ 17 means options are cheap on \emph{both} sides of the
+book, which favours long-gamma expressions. The codebase has no
+energy or commodity exposure model -- a visible blind spot in the
+current rotation, and one this note explicitly patches over via the
+XLE / DBC / GLD overlay.
+
+% ============================================================
+\section{Trailing 3-Month Review (Feb--May 2026)}
+% ============================================================
+
+\begin{itemize}[nosep]
+  \item Q1 2026: S\&P -4.3\%, Nasdaq -5.8\%
+  \item Sector winners: \textcolor{gain}{XLE +37.9\%} (oil +84\%),
+        \textcolor{gain}{DBC +29.5\%}, materials
+  \item Sector losers: XLK, XLY, XLF each \textcolor{loss}{$<$-7\%}
+  \item Earnings growth divergence: Comm Services +53.2\%, Tech +50.0\%,
+        Cons Disc +39.0\%
+  \item VIX path: 17 $\to$ 31 (March panic) $\to$ 17 (May complacency)
+  \item Russell 2000 broke Jan ATH after \textcolor{gain}{+8.6\%} in
+        2 weeks (the ``great rotation'')
+  \item BTC drawdown: $\sim$\$94K $\to$ \$81K, \textcolor{loss}{-14\%}
+  \item Codebase's IWN puts closed +57\% and +103\% during the March
+        vol spike
+\end{itemize}
+
+% ============================================================
+\section{Forward 3-Month Outlook (May--Aug 2026)}
+% ============================================================
+
+\subsection{Catalysts}
+\begin{itemize}[nosep]
+  \item Powell tenure ends May 2026 $\to$ new (likely dovish) Fed chair
+  \item Clarity Act (US crypto regulatory framework) potential vote
+  \item 3 Fed cuts on consensus for 2026; June FOMC is the primary marker
+  \item \$368B small-cap maturity wall in 2026; Russell 2000 has 32\%
+        floating-rate debt vs 6\% S\&P
+  \item Geopolitical oil premium persisting
+\end{itemize}
+
+\subsection{Consensus price paths}
+\begin{itemize}[nosep]
+  \item BTC: June high \$83.9K / low \$70.3K, fading to \$71--78K Jul--Aug
+  \item IWM: extended at ATH; debt rollover at $\sim$6.5\% structural drag
+  \item Energy: momentum intact, no clean reversal
+  \item EM equities: EWT parabolic, EWZ has more room
+\end{itemize}
+
+% ============================================================
+\section{Recommendations}
+% ============================================================
+
+\subsection{Call book (forward upside, cheap IV)}
+
+\textbf{XLE 3M ATM calls -- 0.40\% NAV.} Energy is the cleanest
+trending regime in the tape: XLE +37.9\% in Q1, oil +84\%, no
+catalysts pointing to reversal, and a persistent geopolitical
+premium. With VIX at 17 the call is structurally cheap. This is
+the highest-conviction long in the book and the largest sizing.
+
+\textbf{IBIT 3M ATM calls -- 0.30\% NAV.} BTC at \$81K against a
+consensus June high of \$83.9K plus the Powell-replacement /
+Clarity Act catalyst window. Calls are the defined-risk version
+of the codebase's BTC long; 3M tenor is sized to capture the June
+FOMC and not bleed into the Jul--Aug fade.
+
+\textbf{EWZ 2--3M OTM calls -- 0.20\% NAV.} Brazil is the EM beta
+that still has room: +60\% trailing 1Y, riding commodity and
+supply-chain tailwinds, and not yet parabolic in the way EWT is.
+OTM strikes give convex payoff if the commodity rotation persists.
+
+\textbf{DBC 3M ATM calls -- 0.05\% NAV.} Token sizing on the broad
+commodity basket as a co-trade with XLE; DBC +29.5\% in Q1 keeps
+it the cleanest portfolio expression of the rotation.
+
+\textbf{GLD 3M ATM calls -- 0.05\% NAV.} Token sizing on gold as a
+dovish-Fed / weaker-USD beneficiary; sits naturally alongside the
+DBC sleeve and hedges the call book against a stagflation tail
+where rates fall but growth disappoints.
+
+\subsection{Put book (forward downside, structural)}
+
+\textbf{IWN 3M ATM puts -- 0.25\% NAV.} The codebase's flagship
+hedge: IWN puts closed +57\% and +103\% during the March vol
+spike. Russell 2000 is extended at ATH, carries 32\% floating-rate
+debt, and faces the \$368B small-cap maturity wall through 2026.
+At 4.4\% of spot vs 15.4\% for BTC puts, it remains a 3.5$\times$
+cheaper expression of the same risk-off scenario.
+
+\textbf{XLY 3M ATM puts -- 0.25\% NAV.} Consumer discretionary is
+already a Q1 loser ($<$-7\%) yet still trades on consumer-strength
+narrative; if the rate-cut path delays or earnings deceleration
+broadens, XLY is the cleanest single-sector short. Sized equal to
+IWN puts to diversify the put book across small-cap-debt and
+consumer-spend factors.
+
+\subsection{Pair trade -- modernized codebase pair}
+
+\begin{enumerate}[nosep]
+  \item \textbf{Long XLE 3M calls + Long IWN 3M puts.} Both legs
+        monetize the stagflation / oil-spike / small-cap-debt-wall
+        scenario; positively skewed, and patches the codebase's
+        energy blind spot.
+  \item \textbf{Long IBIT 3M calls + Long IWN 3M puts.} Preserves
+        the structural BTC-vs-small-cap pair the codebase
+        identified, but with a defined-risk BTC long via IBIT
+        calls instead of GBTC spot.
+\end{enumerate}
+
+\subsection{Avoid (or trim if held)}
+\begin{itemize}[nosep]
+  \item EWT calls (parabolic +33\% in 5 weeks)
+  \item XLK / QQQ calls (no catalyst)
+  \item RBC (+120\% 1Y, codebase short-thesis candidate, trim)
+  \item BTC calls past 3M tenor (Jul--Aug fades)
+\end{itemize}
+
+% ============================================================
+\section{Universe -- Codebase Reference Tables}
+% ============================================================
+
+\subsection{Top 10 BTC-LONG thesis (negative BTC correlation)}
+
+\begin{longtable}{l l r r r r r}
+\toprule
+Rank & Ticker & Spot & 30d Vol & 3M Corr & 1Y Return & Score \\
+\midrule
+\endhead
+1  & WEAT  & \$21.99   & 23.0\% & -0.333 & -16.7\%                 & 0.523 \\
+2  & EWZ   & \$38.64   & 27.1\% & -0.253 & \textcolor{gain}{+33.5\%} & 0.495 \\
+3  & EWT   & \$75.07   & 24.0\% & -0.257 & \textcolor{gain}{+71.5\%} & 0.479 \\
+4  & XLY   & \$115.42  & 16.4\% & -0.269 & \textcolor{gain}{+28.6\%} & 0.479 \\
+5  & EEM   & \$61.50   & 18.5\% & -0.212 & \textcolor{gain}{+59.7\%} & 0.473 \\
+6  & MOO   & \$85.20   & 14.2\% & -0.198 & \textcolor{gain}{+25.4\%} & 0.469 \\
+7  & REXR  & \$37.65   & 28.3\% & -0.233 & -22.6\%                 & 0.469 \\
+8  & HYG   & \$80.28   & 2.6\%  & -0.201 & \textcolor{gain}{+16.4\%} & 0.455 \\
+9  & VWO   & \$57.24   & 15.1\% & -0.165 & \textcolor{gain}{+46.8\%} & 0.454 \\
+10 & SOYB  & \$23.69   & 9.3\%  & -0.167 & -2.7\%                  & 0.450 \\
+\bottomrule
+\end{longtable}
+
+\subsection{Top 10 BTC-SHORT thesis (positive BTC correlation)}
+
+\begin{longtable}{l l r r r r r}
+\toprule
+Rank & Ticker & Spot & 30d Vol & 3M Corr & 1Y Return & Score \\
+\midrule
+\endhead
+1  & GMED  & \$93.80   & 23.7\% & +0.154 & \textcolor{gain}{+69.9\%}  & 0.436 \\
+2  & RJF   & \$154.42  & 35.9\% & +0.158 & \textcolor{gain}{+31.3\%}  & 0.434 \\
+3  & MIDD  & \$164.99  & 29.4\% & +0.139 & \textcolor{gain}{+7.1\%}   & 0.424 \\
+4  & PODD  & \$245.45  & 32.7\% & +0.099 & \textcolor{gain}{+46.3\%}  & 0.421 \\
+5  & CFLT  & \$30.70   & 3.3\%  & +0.128 & -11.1\%                  & 0.416 \\
+6  & RBC   & \$584.89  & 18.7\% & +0.042 & \textcolor{gain}{+120.1\%} & 0.415 \\
+7  & URBN  & \$65.69   & 35.9\% & +0.089 & \textcolor{gain}{+52.4\%}  & 0.413 \\
+8  & WES   & \$42.09   & 22.9\% & +0.136 & \textcolor{gain}{+49.3\%}  & 0.412 \\
+9  & IWO   & \$338.51  & 21.3\% & +0.049 & \textcolor{gain}{+27.7\%}  & 0.404 \\
+10 & GGG   & \$94.82   & 18.8\% & +0.040 & \textcolor{gain}{+6.3\%}   & 0.401 \\
+\bottomrule
+\end{longtable}
+
+% ============================================================
+\section{Caveats and Known Risks}
+% ============================================================
+
+\begin{itemize}[nosep]
+  \item Codebase data is $\sim$60 days stale; correlations may have
+        shifted in the post-VIX-collapse risk-on regime
+  \item Codebase has no energy/commodity exposure model -- XLE/DBC/oil
+        are blind spots
+  \item EWT was the codebase's \#3 negative-corr trade -- now too
+        extended; do not conflate prior signal with current entry
+  \item Calls + puts at low IV = long-gamma straddle book; theta
+        bleed if vol stays pinned at 17
+  \item June FOMC + Powell-replacement is the single biggest 3M
+        risk-event -- time expiries through it
+  \item Variance-Kelly's quarter-Kelly is sized for trending regimes;
+        chop will degrade Sharpe
+\end{itemize}
+
+% ============================================================
+\section{References}
+% ============================================================
+
+\begin{itemize}[nosep]
+  \item \href{https://fortune.com/article/price-of-bitcoin-05-07-2026/}{Bitcoin price May 7, 2026 -- Fortune}
+  \item \href{https://seekingalpha.com/article/4887991-q1-2026-recap}{Q1 2026 Recap -- Seeking Alpha}
+  \item \href{https://markets.financialcontent.com/stocks/article/marketminute-2026-3-11-the-great-rotation-russell-2000-surges-89-as-small-cap-value-dethrones-tech-giants-in-2026}{Russell 2000 surges 8.9\% -- FinancialContent}
+  \item \href{https://markets.financialcontent.com/stocks/article/marketminute-2026-3-23-small-caps-under-siege-russell-2000-enters-correction-as-yields-surge}{Small caps under siege -- FinancialContent}
+  \item \href{https://changelly.com/blog/bitcoin-price-prediction/}{Bitcoin price predictions 2026 -- Changelly}
+  \item \href{https://stockanalysis.com/etf/ewt/}{EWT Stock Analysis -- stockanalysis.com}
+  \item \href{https://247wallst.com/investing/2026/05/01/the-cboe-vix-falls-to-16-level-as-risk-on-trade-returns-to-market/}{VIX falls below 17 -- 24/7 Wall St.}
+  \item \href{https://247wallst.com/investing/2026/05/07/how-ewz-and-eww-investors-are-riding-commodity-and-supply-chain-tailwinds/}{EWZ commodity tailwinds -- 24/7 Wall St.}
+\end{itemize}
+
+\end{document}

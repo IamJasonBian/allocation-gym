@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="450" viewBox="0 0 900 450">
+<rect width="900" height="450" fill="#ffffff"/>
+<style>text { font-family: "Helvetica Neue", Arial, sans-serif; }</style>
+<text x="450.0" y="30.0" text-anchor="middle" font-size="16" font-weight="bold" fill="#222">Annual Returns: Gold vs BTC</text>
+<text x="450.0" y="45.0" text-anchor="middle" font-size="11" fill="#666">Calendar year, log-return compounded</text>
+<rect x="80" y="50.0" width="790.0" height="340.0" fill="none" stroke="#cccccc" stroke-width="1"/>
+<line x1="80" y1="362.4849648781556" x2="870.0" y2="362.4849648781556" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="72" y="366.4849648781556" text-anchor="end" font-size="11" fill="#555">-50.0%</text>
+<line x1="80" y1="334.09380345933573" x2="870.0" y2="334.09380345933573" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="72" y="338.09380345933573" text-anchor="end" font-size="11" fill="#555">-25.0%</text>
+<line x1="80" y1="305.70264204051585" x2="870.0" y2="305.70264204051585" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="72" y="309.70264204051585" text-anchor="end" font-size="11" fill="#555">0.00%</text>
+<line x1="80" y1="277.311480621696" x2="870.0" y2="277.311480621696" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="72" y="281.311480621696" text-anchor="end" font-size="11" fill="#555">25.0%</text>
+<line x1="80" y1="248.92031920287607" x2="870.0" y2="248.92031920287607" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="72" y="252.92031920287607" text-anchor="end" font-size="11" fill="#555">50.0%</text>
+<line x1="80" y1="220.5291577840562" x2="870.0" y2="220.5291577840562" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="72" y="224.5291577840562" text-anchor="end" font-size="11" fill="#555">75.0%</text>
+<line x1="80" y1="192.1379963652363" x2="870.0" y2="192.1379963652363" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="72" y="196.1379963652363" text-anchor="end" font-size="11" fill="#555">100%</text>
+<line x1="80" y1="163.74683494641644" x2="870.0" y2="163.74683494641644" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="72" y="167.74683494641644" text-anchor="end" font-size="11" fill="#555">125%</text>
+<line x1="80" y1="135.35567352759654" x2="870.0" y2="135.35567352759654" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="72" y="139.35567352759654" text-anchor="end" font-size="11" fill="#555">150%</text>
+<line x1="80" y1="106.96451210877666" x2="870.0" y2="106.96451210877666" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="72" y="110.96451210877666" text-anchor="end" font-size="11" fill="#555">175%</text>
+<line x1="80" y1="78.57335068995678" x2="870.0" y2="78.57335068995678" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="72" y="82.57335068995678" text-anchor="end" font-size="11" fill="#555">200%</text>
+<line x1="80" y1="50.182189271136906" x2="870.0" y2="50.182189271136906" stroke="#e0e0e0" stroke-width="0.5"/>
+<text x="72" y="54.182189271136906" text-anchor="end" font-size="11" fill="#555">225%</text>
+<line x1="80" y1="305.70264204051585" x2="870.0" y2="305.70264204051585" stroke="#555" stroke-width="1"/>
+<rect x="97.74999999999999" y="286.1461924831414" width="46.08333333333333" height="19.556449557374435" fill="#FFD700" stroke="#b8860b" stroke-width="0.5" rx="2"/>
+<rect x="147.83333333333331" y="67.03469685129193" width="46.08333333333333" height="238.66794518922393" fill="#f7931a" stroke="#c67300" stroke-width="0.5" rx="2"/>
+<text x="145.83333333333331" y="408.0" text-anchor="middle" font-size="12" fill="#333">2020</text>
+<text x="120.79166666666666" y="282.1461924831414" text-anchor="middle" font-size="9" fill="#b8860b">17%</text>
+<text x="170.87499999999997" y="63.034696851291926" text-anchor="middle" font-size="9" fill="#c67300">210%</text>
+<rect x="229.41666666666669" y="305.70264204051585" width="46.08333333333333" height="3.3822231243496503" fill="#FFD700" stroke="#b8860b" stroke-width="0.5" rx="2"/>
+<rect x="279.5" y="238.30789886563454" width="46.08333333333333" height="67.39474317488131" fill="#f7931a" stroke="#c67300" stroke-width="0.5" rx="2"/>
+<text x="277.5" y="408.0" text-anchor="middle" font-size="12" fill="#333">2021</text>
+<text x="252.45833333333334" y="301.70264204051585" text-anchor="middle" font-size="9" fill="#b8860b">-3%</text>
+<text x="302.5416666666667" y="234.30789886563454" text-anchor="middle" font-size="9" fill="#c67300">59%</text>
+<rect x="361.08333333333337" y="305.70264204051585" width="46.08333333333333" height="1" fill="#FFD700" stroke="#b8860b" stroke-width="0.5" rx="2"/>
+<rect x="411.1666666666667" y="305.70264204051585" width="46.08333333333333" height="72.9408933919562" fill="#f7931a" stroke="#c67300" stroke-width="0.5" rx="2"/>
+<text x="409.1666666666667" y="408.0" text-anchor="middle" font-size="12" fill="#333">2022</text>
+<text x="384.125" y="301.70264204051585" text-anchor="middle" font-size="9" fill="#b8860b">-1%</text>
+<text x="434.20833333333337" y="301.70264204051585" text-anchor="middle" font-size="9" fill="#c67300">-64%</text>
+<rect x="492.75000000000006" y="289.8454277008304" width="46.08333333333333" height="15.85721433968547" fill="#FFD700" stroke="#b8860b" stroke-width="0.5" rx="2"/>
+<rect x="542.8333333333334" y="128.79461868065823" width="46.08333333333333" height="176.90802335985762" fill="#f7931a" stroke="#c67300" stroke-width="0.5" rx="2"/>
+<text x="540.8333333333334" y="408.0" text-anchor="middle" font-size="12" fill="#333">2023</text>
+<text x="515.7916666666667" y="285.8454277008304" text-anchor="middle" font-size="9" fill="#b8860b">14%</text>
+<text x="565.875" y="124.79461868065823" text-anchor="middle" font-size="9" fill="#c67300">156%</text>
+<rect x="624.4166666666666" y="275.920047267489" width="46.08333333333333" height="29.782594773026858" fill="#FFD700" stroke="#b8860b" stroke-width="0.5" rx="2"/>
+<rect x="674.5" y="168.39363809254306" width="46.08333333333333" height="137.3090039479728" fill="#f7931a" stroke="#c67300" stroke-width="0.5" rx="2"/>
+<text x="672.5" y="408.0" text-anchor="middle" font-size="12" fill="#333">2024</text>
+<text x="647.4583333333334" y="271.920047267489" text-anchor="middle" font-size="9" fill="#b8860b">26%</text>
+<text x="697.5416666666666" y="164.39363809254306" text-anchor="middle" font-size="9" fill="#c67300">121%</text>
+<rect x="756.0833333333333" y="282.85837006866075" width="46.08333333333333" height="22.844271971855107" fill="#FFD700" stroke="#b8860b" stroke-width="0.5" rx="2"/>
+<rect x="806.1666666666666" y="299.7447537770376" width="46.08333333333333" height="5.957888263478253" fill="#f7931a" stroke="#c67300" stroke-width="0.5" rx="2"/>
+<text x="804.1666666666666" y="408.0" text-anchor="middle" font-size="12" fill="#333">2025</text>
+<text x="779.125" y="278.85837006866075" text-anchor="middle" font-size="9" fill="#b8860b">20%</text>
+<text x="829.2083333333333" y="295.7447537770376" text-anchor="middle" font-size="9" fill="#c67300">5%</text>
+<rect x="702.0" y="60.0" width="14" height="3" fill="#FFD700"/>
+<text x="722.0" y="66.0" font-size="11" fill="#333">Gold (GLD)</text>
+<rect x="702.0" y="80.0" width="14" height="3" fill="#f7931a"/>
+<text x="722.0" y="86.0" font-size="11" fill="#333">Bitcoin</text>
+<text x="16" y="220.0" text-anchor="middle" font-size="12" fill="#444" transform="rotate(-90,16,220.0)">Return (%)</text>
+</svg>

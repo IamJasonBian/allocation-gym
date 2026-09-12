@@ -153,6 +153,7 @@ def build_cerebro(args, config: BacktestConfig) -> bt.Cerebro:
         "variance_lookback": config.variance_lookback,
         "vr_k": config.vr_k,
         "trading_days": config.trading_days,
+        "signals": getattr(args, "signals", False),
     }
 
     if args.strategy == "variance_kelly":
@@ -280,6 +281,8 @@ def run(args=None):
                         help="Print historical order book (all fills)")
     parser.add_argument("--print-allocation", action="store_true",
                         help="Print daily allocation, value, and P&L")
+    parser.add_argument("--signals", action="store_true",
+                        help="Overlay BTC signal indicators (IV z-score, ETF flows, hist vol)")
 
     args = parser.parse_args(args)
     config = BacktestConfig(initial_cash=args.cash)

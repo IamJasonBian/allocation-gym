@@ -1,5 +1,5 @@
 """
-Backtest result plotting — equity curve, P&L, and trades on price.
+Backtest result plotting — equity curve, P&L, trades on price, and signal overlays.
 Auto-shows on every run. Use --no-plot to disable.
 """
 
@@ -10,9 +10,30 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 
 
+def _extract_line_history(indicator, line_name):
+    """Extract (dates, values) from a backtrader indicator line."""
+    line = getattr(indicator.lines, line_name)
+    dates, vals = [], []
+    for j in range(-len(indicator) + 1, 1):
+        try:
+            dt = indicator.data.datetime.date(j)
+            v = line[j]
+            dates.append(dt)
+            vals.append(v)
+        except IndexError:
+            continue
+    return dates, vals
+
+
+def _has_signals(strat):
+    """Check if the strategy has signal indicators attached."""
+    return getattr(strat, "signal_iv", None) is not None
+
+
 def plot_backtest(analyzer, cerebro_result, strategy_name="", symbols=None):
     """
     Plot backtest results with separate subplots per symbol + equity + P&L.
+    When --signals is enabled, adds IV z-score, ETF flows, and hist vol panels.
 
     Args:
         analyzer: PerformanceAnalyzer instance
@@ -35,16 +56,21 @@ def plot_backtest(analyzer, cerebro_result, strategy_name="", symbols=None):
 
     strat = cerebro_result
     n_symbols = len(strat.datas)
-    n_panels = n_symbols + 2  # one per symbol + equity + P&L
+    has_sigs = _has_signals(strat)
 
-    height_ratios = [1.5] * n_symbols + [1, 1]
-    fig_height = 3 * n_symbols + 5
+    # Panel count: symbols + equity + PnL + (optional: IV, ETF flow, hist vol)
+    n_signal_panels = 3 if has_sigs else 0
+    n_panels = n_symbols + 2 + n_signal_panels
+
+    height_ratios = [1.5] * n_symbols + [1, 1] + [0.8] * n_signal_panels
+    fig_height = 3 * n_symbols + 5 + 2.5 * n_signal_panels
     fig, axes = plt.subplots(n_panels, 1, figsize=(14, fig_height),
                              height_ratios=height_ratios, sharex=True)
 
-    # Handle single-symbol case where axes isn't an array
-    if n_panels == 3:
-        axes = [axes[0], axes[1], axes[2]]
+    if not isinstance(axes, np.ndarray):
+        axes = [axes]
+    else:
+        axes = list(axes)
 
     fig.suptitle(
         f"{strategy_name.upper()}  |  "
@@ -151,13 +177,75 @@ def plot_backtest(analyzer, cerebro_result, strategy_name="", symbols=None):
     )
 
     ax_pnl.set_ylabel("Daily P&L ($)", fontsize=10)
-    ax_pnl.set_xlabel("Date", fontsize=10)
     ax_pnl.grid(True, alpha=0.25, linestyle="--")
     ax_pnl.margins(x=0.02)
 
-    # Format x-axis dates
-    ax_pnl.xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
-    ax_pnl.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
+    # ── Signal panels (when --signals is enabled) ──
+    if has_sigs:
+        base_idx = n_symbols + 2
+
+        # Panel: IV Z-Score
+        ax_iv = axes[base_idx]
+        iv_dates, iv_dvol = _extract_line_history(strat.signal_iv, "dvol")
+        _, iv_zs = _extract_line_history(strat.signal_iv, "dvol_zscore")
+
+        ax_iv.plot(iv_dates, iv_dvol, color="purple", linewidth=1, label="DVOL")
+        ax_iv.set_ylabel("DVOL (%)", fontsize=9, color="purple")
+        ax_iv.tick_params(axis="y", labelcolor="purple", labelsize=8)
+        ax_iv.grid(True, alpha=0.25, linestyle="--")
+        ax_iv.margins(x=0.02)
+
+        ax_zs = ax_iv.twinx()
+        zs_colors = ["#ff1744" if z > 1 else ("#00c853" if z < -1 else "gray") for z in iv_zs]
+        ax_zs.bar(iv_dates, iv_zs, color=zs_colors, alpha=0.3, width=1.5)
+        ax_zs.axhline(0, color="black", linewidth=0.5)
+        ax_zs.axhline(1, color="red", linestyle=":", linewidth=0.6, alpha=0.5)
+        ax_zs.axhline(-1, color="green", linestyle=":", linewidth=0.6, alpha=0.5)
+        ax_zs.set_ylabel("Z-Score", fontsize=9)
+        ax_zs.tick_params(axis="y", labelsize=8)
+        ax_iv.set_title("IV Z-Score (Deribit DVOL)", fontsize=9, loc="left")
+        ax_iv.legend(loc="upper left", fontsize=7)
+
+        # Panel: ETF Cumulative Flows
+        ax_flow = axes[base_idx + 1]
+        flow_dates, cum_flow = _extract_line_history(strat.signal_flow, "cumulative_flow")
+
+        cum_arr = np.array(cum_flow)
+        ax_flow.fill_between(flow_dates, 0, cum_arr, alpha=0.25,
+                             color="green", where=cum_arr >= 0)
+        ax_flow.fill_between(flow_dates, 0, cum_arr, alpha=0.25,
+                             color="red", where=cum_arr < 0)
+        ax_flow.plot(flow_dates, cum_arr, color="steelblue", linewidth=1)
+        ax_flow.axhline(0, color="black", linewidth=0.5)
+        ax_flow.set_ylabel("Cum. Flow ($)", fontsize=9)
+        ax_flow.yaxis.set_major_formatter(
+            plt.FuncFormatter(lambda x, _: f"${x/1e9:.1f}B" if abs(x) >= 1e9 else f"${x/1e6:.0f}M")
+        )
+        ax_flow.set_title("BTC ETF Cumulative Net Flows (est.)", fontsize=9, loc="left")
+        ax_flow.grid(True, alpha=0.25, linestyle="--")
+        ax_flow.margins(x=0.02)
+
+        # Panel: Historical Volatility (from first symbol's VarianceIndicator)
+        ax_vol = axes[base_idx + 2]
+        first_name = strat.datas[0]._name
+        var_ind = strat.variance_indicators.get(first_name)
+        if var_ind is not None:
+            vol_dates, vol_vals = _extract_line_history(var_ind, "yz_vol_ann")
+            vol_pct = [v * 100 for v in vol_vals]
+            ax_vol.plot(vol_dates, vol_pct, color="darkorange", linewidth=1,
+                        label="Yang-Zhang Vol (ann.)")
+            ax_vol.axhline(50, color="gray", linestyle=":", alpha=0.4, linewidth=0.7)
+            ax_vol.axhline(80, color="red", linestyle=":", alpha=0.4, linewidth=0.7)
+            ax_vol.set_ylabel("Vol %", fontsize=9)
+            ax_vol.set_title(f"Historical Volatility — {first_name}", fontsize=9, loc="left")
+            ax_vol.legend(loc="upper left", fontsize=7)
+        ax_vol.grid(True, alpha=0.25, linestyle="--")
+        ax_vol.margins(x=0.02)
+
+    # Format x-axis dates on the bottom panel
+    axes[-1].set_xlabel("Date", fontsize=10)
+    axes[-1].xaxis.set_major_formatter(mdates.DateFormatter("%b %Y"))
+    axes[-1].xaxis.set_major_locator(mdates.MonthLocator(interval=2))
     fig.autofmt_xdate(rotation=30)
 
     plt.tight_layout()

@@ -30,12 +30,15 @@ class VarianceKellyStrategy(bt.Strategy):
         ("vr_k", 3),
         ("trading_days", 252),
         ("rebalance_days", 5),
+        ("signals", False),
     )
 
     def __init__(self):
         self.variance_indicators = {}
         self.bar_count = 0
         self._prev_month = None
+        self.signal_iv = None
+        self.signal_flow = None
 
         self._initial_alloc_done = False
         self._initial_order_refs = set()
@@ -49,6 +52,12 @@ class VarianceKellyStrategy(bt.Strategy):
                 vr_k=self.p.vr_k,
                 trading_days=td,
             )
+
+        if self.p.signals:
+            from allocation_gym.indicators.iv_zscore import IVZScoreIndicator
+            from allocation_gym.indicators.etf_flow import ETFFlowIndicator
+            self.signal_iv = IVZScoreIndicator(self.datas[0])
+            self.signal_flow = ETFFlowIndicator(self.datas[0])
 
     def _is_month_end(self):
         """True on the last trading day of a month (next bar is a new month)."""

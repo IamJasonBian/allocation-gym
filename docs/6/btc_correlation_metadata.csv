@@ -1,0 +1,10 @@
+parameter,value
+run_date,2026-03-02 17:55
+btc_spot,69320.55
+btc_30d_vol,0.677616
+universe_size,226
+portfolio_value,1000000
+reallocation_pct,0.25
+risk_free_rate,0.045
+lookback_period,2y
+correlation_windows,63d / 126d / 252d

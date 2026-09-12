@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="420" viewBox="0 0 720 420">
+<rect width="720" height="420" fill="#ffffff"/>
+<style>text { font-family: "Helvetica Neue", Arial, sans-serif; }</style>
+<text x="360.0" y="32" text-anchor="middle" font-size="16" font-weight="bold" fill="#222">Asset Allocation Summary Statistics</text>
+<text x="360.0" y="50" text-anchor="middle" font-size="11" fill="#666">Jan 2020 – Dec 2025  |  Monthly data  |  Risk-free rate = 4.5%</text>
+<rect x="40" y="72" width="640" height="28" fill="#f0f4f8" rx="4"/>
+<text x="60" y="91" font-size="12" font-weight="bold" fill="#333"></text>
+<text x="220" y="91" font-size="12" font-weight="bold" fill="#333">Gold (GLD)</text>
+<text x="420" y="91" font-size="12" font-weight="bold" fill="#333">Bitcoin (BTC)</text>
+<text x="600" y="91" font-size="12" font-weight="bold" fill="#333">Correlation</text>
+<rect x="40" y="139" width="640" height="30" fill="#fafafa" rx="2"/>
+<text x="60" y="155" font-size="12" fill="#333">Ann. Return</text>
+<text x="220" y="155" font-size="12" fill="#b8860b">11.3%</text>
+<text x="420" y="155" font-size="12" fill="#f7931a">39.8%</text>
+<text x="60" y="190" font-size="12" fill="#333">Ann. Volatility</text>
+<text x="220" y="190" font-size="12" fill="#b8860b">11.7%</text>
+<text x="420" y="190" font-size="12" fill="#f7931a">61.8%</text>
+<rect x="40" y="209" width="640" height="30" fill="#fafafa" rx="2"/>
+<text x="60" y="225" font-size="12" fill="#333">Sharpe Ratio</text>
+<text x="220" y="225" font-size="12" fill="#b8860b">0.58</text>
+<text x="420" y="225" font-size="12" fill="#f7931a">0.57</text>
+<text x="60" y="260" font-size="12" fill="#333">Max Drawdown</text>
+<text x="220" y="260" font-size="12" fill="#b8860b">17.7%</text>
+<text x="420" y="260" font-size="12" fill="#f7931a">73.1%</text>
+<rect x="40" y="279" width="640" height="30" fill="#fafafa" rx="2"/>
+<text x="60" y="295" font-size="12" fill="#333">Total Return</text>
+<text x="220" y="295" font-size="12" fill="#b8860b">95%</text>
+<text x="420" y="295" font-size="12" fill="#f7931a">951%</text>
+<text x="60" y="330" font-size="12" fill="#333">Correlation</text>
+<text x="220" y="330" font-size="12" fill="#b8860b"></text>
+<text x="420" y="330" font-size="12" fill="#f7931a"></text>
+<text x="600" y="330" font-size="13" font-weight="bold" fill="#8e44ad">0.231</text>
+<rect x="204" y="78" width="10" height="10" fill="#FFD700" rx="2"/>
+<rect x="404" y="78" width="10" height="10" fill="#f7931a" rx="2"/>
+</svg>
