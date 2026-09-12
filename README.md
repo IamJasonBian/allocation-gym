@@ -51,3 +51,9 @@ python -m allocation_gym.runner --strategy momentum --symbols SPY \
 ```bash
 pytest tests/ -v
 ```
+
+## Research
+
+Field notes from external hackathons and broker/agent patterns:
+
+- [Alpaca AI Trading Agents Hackathon (Aug–Sep 2026)](docs/research/alpaca-ai-trading-agents-hackathon-2026.md) — submission stats, risk gates, agent architectures
